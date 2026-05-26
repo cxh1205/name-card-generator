@@ -314,7 +314,7 @@ html, body, #app {
   border-right: 1px solid var(--slate-200);
   display: flex; flex-direction: column; gap: 6px;
   overflow-y: auto;
-  padding: 0 16px 16px;
+  padding: 0 16px 0;
   z-index: 10;
 }
 
@@ -469,8 +469,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 .print-sticky {
   position: sticky; bottom: 0; background: #fff;
   margin-top: auto;
-  padding: 12px 0 4px; margin-left: -16px; margin-right: -16px;
-  padding-left: 16px; padding-right: 16px;
+  padding: 12px 16px 16px; margin-left: -16px; margin-right: -16px;
   border-top: 1px solid var(--slate-200);
 }
 
