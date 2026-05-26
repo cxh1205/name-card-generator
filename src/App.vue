@@ -48,9 +48,9 @@ const printFontSize = computed(() => {
 })
 
 const cardStyle = computed(() => ({
-  width: `${cardSize.value}mm`,
-  height: `${cardSize.value}mm`,
   backgroundColor: bgColor.value,
+  // CSS vars: screen font-pct, print mm dimensions
+  '--font-pct': fontPctEffective.value,
   '--print-w': `${cardSize.value}mm`,
   '--print-h': `${cardSize.value}mm`,
   '--print-fs': printFontSize.value,
@@ -61,7 +61,6 @@ const halfStyle = computed(() => {
     fontWeight: fontWeight.value,
     color: fontColor.value,
     fontFamily: '"KaiTi", "STKaiti", "楷体", "KaiTi SC", "AR PL UKai CN", serif',
-    '--font-pct': fontPctEffective.value,
   }
   if (bgImage.value) {
     s.backgroundImage = `url(${bgImage.value})`
@@ -72,10 +71,11 @@ const halfStyle = computed(() => {
 })
 
 const gridStyle = computed(() => ({
-  gridTemplateColumns: `repeat(${columns.value}, auto)`,
+  gridTemplateColumns: `repeat(${columns.value}, minmax(0, 1fr))`,
   gap: '24px',
-  justifyContent: 'center',
   padding: '28px',
+  width: '100%',
+  maxWidth: '960px',
 }))
 
 // ---- image upload ----
@@ -468,7 +468,8 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 /* ---- Print Button ---- */
 .print-sticky {
   position: sticky; bottom: 0; background: #fff;
-  padding: 12px 0 4px; margin: 0 -16px;
+  margin-top: auto;
+  padding: 12px 0 4px; margin-left: -16px; margin-right: -16px;
   padding-left: 16px; padding-right: 16px;
   border-top: 1px solid var(--slate-200);
 }
@@ -533,6 +534,8 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 
 .card {
   display: flex; flex-direction: column;
+  aspect-ratio: 1 / 1;
+  width: 100%;
   box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08);
   border-radius: 2px;
   transition: box-shadow 0.2s;
