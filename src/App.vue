@@ -13,6 +13,14 @@ const autoFill = ref(true)
 const bgImage = ref(null)
 const imageInput = ref(null)
 
+// ---- 3D standee ----
+const show3D = ref(false)
+const rotateX3D = ref(-20)
+const rotateY3D = ref(30)
+const zoom3D = ref(0)
+const isDragging3D = ref(false)
+const dragStart3D = ref({ x: 0, y: 0, rx: 0, ry: 0 })
+
 // ---- derived ----
 const names = computed(() =>
   namesText.value
@@ -113,6 +121,59 @@ function cropTo21(img) {
 
 function removeBgImage() { bgImage.value = null }
 function doPrint() { window.print() }
+
+// ---- 3D standee computed & handlers ----
+const displayName3D = computed(() => {
+  return names.value.length > 0 ? names.value[0] : '名字'
+})
+
+const stage3DStyle = computed(() => ({
+  transform: `translateZ(${zoom3D.value}px) rotateX(${rotateX3D.value}deg) rotateY(${rotateY3D.value}deg)`,
+}))
+
+const leaf3DStyle = computed(() => {
+  const s = {
+    backgroundColor: bgColor.value,
+    color: fontColor.value,
+    fontWeight: fontWeight.value,
+    fontFamily: '"KaiTi", "STKaiti", "楷体", "KaiTi SC", "AR PL UKai CN", serif',
+    fontSize: `${Math.round(130 * fontPctEffective.value / 100)}px`,
+  }
+  if (bgImage.value) {
+    s.backgroundImage = `url(${bgImage.value})`
+    s.backgroundSize = '100% 100%'
+  }
+  return s
+})
+
+function pointerDown3D(e) {
+  isDragging3D.value = true
+  const pt = e.touches ? e.touches[0] : e
+  dragStart3D.value = { x: pt.clientX, y: pt.clientY, rx: rotateX3D.value, ry: rotateY3D.value }
+}
+
+function pointerMove3D(e) {
+  if (!isDragging3D.value) return
+  const pt = e.touches ? e.touches[0] : e
+  if (!pt) return
+  rotateY3D.value = dragStart3D.value.ry + (pt.clientX - dragStart3D.value.x) * 0.5
+  rotateX3D.value = dragStart3D.value.rx - (pt.clientY - dragStart3D.value.y) * 0.5
+}
+
+function pointerUp3D() {
+  isDragging3D.value = false
+}
+
+function onWheel3D(e) {
+  e.preventDefault()
+  zoom3D.value = Math.max(-400, Math.min(600, zoom3D.value - e.deltaY * 0.5))
+}
+
+function reset3DView() {
+  rotateX3D.value = -20
+  rotateY3D.value = 30
+  zoom3D.value = 0
+}
 </script>
 
 <template>
@@ -239,11 +300,18 @@ function doPrint() { window.print() }
         <div class="btn-group">
           <button v-for="n in [1,2,3]" :key="n" :class="{ active: columns === n }" @click="columns = n">{{ n }} 列</button>
         </div>
+        <div class="col-bar-spacer"></div>
+        <label class="toggle-3d">
+          <input type="checkbox" v-model="show3D" />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span class="toggle-label">3D 立牌</span>
+        </label>
       </div>
 
       <!-- preview -->
-      <main class="preview">
-        <div v-if="names.length === 0" class="empty-state">
+      <main class="preview" :class="{ 'preview-split': show3D && names.length > 0 }">
+        <!-- 3D off + no names: empty state -->
+        <div v-if="!show3D && names.length === 0" class="empty-state">
           <div class="empty-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
           </div>
@@ -251,7 +319,8 @@ function doPrint() { window.print() }
           <p class="empty-desc">名字将自动排版为可折叠的三角形名牌</p>
         </div>
 
-        <div v-else class="cards-grid" :style="gridStyle">
+        <!-- 3D off + has names: cards only -->
+        <div v-else-if="!show3D" class="cards-grid" :style="gridStyle">
           <div v-for="(name, index) in names" :key="index" class="card" :style="cardStyle">
             <div class="half half-top" :style="halfStyle">
               <span class="name" v-html="displayName(name)"></span>
@@ -261,6 +330,89 @@ function doPrint() { window.print() }
               <span class="name" v-html="displayName(name)"></span>
             </div>
           </div>
+        </div>
+
+        <!-- 3D on + has names: split view -->
+        <template v-else-if="names.length > 0">
+          <div class="preview-left">
+            <div class="cards-grid" :style="gridStyle">
+              <div v-for="(name, index) in names" :key="index" class="card" :style="cardStyle">
+                <div class="half half-top" :style="halfStyle">
+                  <span class="name" v-html="displayName(name)"></span>
+                </div>
+                <div class="divider"></div>
+                <div class="half half-bottom" :style="halfStyle">
+                  <span class="name" v-html="displayName(name)"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="preview-right"
+               @mousedown="pointerDown3D"
+               @mousemove="pointerMove3D"
+               @mouseup="pointerUp3D"
+               @mouseleave="pointerUp3D"
+               @touchstart.prevent="pointerDown3D"
+               @touchmove.prevent="pointerMove3D"
+               @touchend="pointerUp3D"
+               @wheel.prevent="onWheel3D">
+            <button class="reset-3d-btn no-print" @click="reset3DView" title="回正视角">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+              回正
+            </button>
+            <div class="standee-scene">
+              <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
+                <div class="standee">
+                  <div class="leaf leaf-front">
+                    <div class="leaf-face" :style="leaf3DStyle">
+                      <span class="standee-name">{{ displayName3D }}</span>
+                    </div>
+                  </div>
+                  <div class="leaf leaf-back">
+                    <div class="leaf-face" :style="leaf3DStyle">
+                      <span class="standee-name flip">{{ displayName3D }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="standee-ground"></div>
+            </div>
+            <p class="standee-hint">拖拽旋转 / 滚轮缩放</p>
+          </div>
+        </template>
+
+        <!-- 3D on + no names: full-width 3D only -->
+        <div v-else class="preview-3d-full"
+             @mousedown="pointerDown3D"
+             @mousemove="pointerMove3D"
+             @mouseup="pointerUp3D"
+             @mouseleave="pointerUp3D"
+             @touchstart.prevent="pointerDown3D"
+             @touchmove.prevent="pointerMove3D"
+             @touchend="pointerUp3D"
+             @wheel.prevent="onWheel3D">
+          <button class="reset-3d-btn no-print" @click="reset3DView" title="回正视角">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            回正
+          </button>
+          <div class="standee-scene">
+            <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
+              <div class="standee">
+                <div class="leaf leaf-front">
+                  <div class="leaf-face" :style="leaf3DStyle">
+                    <span class="standee-name">{{ displayName3D }}</span>
+                  </div>
+                </div>
+                <div class="leaf leaf-back">
+                  <div class="leaf-face" :style="leaf3DStyle">
+                    <span class="standee-name flip">{{ displayName3D }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="standee-ground"></div>
+          </div>
+          <p class="standee-hint">拖拽旋转 / 滚轮缩放</p>
         </div>
       </main>
     </div>
@@ -506,6 +658,40 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 
 .col-bar .btn-group button { padding: 5px 16px; }
 
+.col-bar-spacer { flex: 1; }
+
+.toggle-3d {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; user-select: none;
+  font-size: 13px; font-weight: 500; color: var(--slate-700);
+  white-space: nowrap;
+}
+.toggle-3d input[type="checkbox"] { display: none; }
+
+.toggle-track {
+  width: 38px; height: 22px;
+  background: var(--slate-300);
+  border-radius: 11px;
+  position: relative;
+  transition: background 0.2s;
+}
+.toggle-3d input:checked + .toggle-track {
+  background: var(--blue-600);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+.toggle-3d input:checked + .toggle-track .toggle-thumb {
+  transform: translateX(16px);
+}
+
 /* ============================================================
    PREVIEW AREA
    ============================================================ */
@@ -563,6 +749,188 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 }
 
 /* ============================================================
+   SPLIT PREVIEW & 3D STANDEE
+   ============================================================ */
+.preview-split {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.preview-left {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: radial-gradient(circle, #d4d4d8 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-color: #e8eaed;
+}
+
+.preview-right {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, #d4d4d8 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-color: #e8eaed;
+  border-left: 1px solid var(--slate-200);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+}
+.preview-right:active { cursor: grabbing; }
+
+.preview-3d-full {
+  flex: 1;
+  align-self: stretch;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, #d4d4d8 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-color: #e8eaed;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+}
+.preview-3d-full:active { cursor: grabbing; }
+.preview-right:active { cursor: grabbing; }
+
+.standee-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  perspective: 900px;
+  perspective-origin: 50% 50%;
+}
+
+.standee-stage {
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease-out;
+  will-change: transform;
+}
+.standee-stage.dragging {
+  transition: none;
+}
+
+.standee {
+  transform-style: preserve-3d;
+  position: relative;
+  width: 260px;
+  height: 150px;
+}
+
+.leaf {
+  position: absolute;
+  left: 0; top: 0;
+  width: 260px;
+  height: 130px;
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  border-radius: 2px;
+  backface-visibility: visible;
+  background: #fff;
+}
+
+.leaf-front {
+  transform: rotateX(30deg);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.leaf-back {
+  transform: rotateX(-30deg);
+}
+
+.leaf-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.leaf-front .leaf-face {
+  transform: translateZ(1px);
+}
+
+.leaf-back .leaf-face {
+  transform: translateZ(-1px);
+}
+
+.leaf-face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.leaf-front .leaf-face::after {
+  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 60%);
+}
+
+.leaf-back .leaf-face::after {
+  background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.05) 100%);
+}
+
+.standee-name {
+  white-space: pre;
+  line-height: 1;
+  text-align: center;
+  pointer-events: none;
+}
+
+.standee-name.flip {
+  transform: scaleX(-1);
+}
+
+.standee-ground {
+  width: 200px;
+  height: 30px;
+  margin-top: -36px;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.standee-hint {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--slate-400);
+  pointer-events: none;
+}
+
+.reset-3d-btn {
+  position: absolute;
+  top: 10px; right: 10px;
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 10px;
+  border: 1px solid var(--slate-200);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--slate-600);
+  font-size: 12px; font-family: inherit;
+  cursor: pointer; z-index: 5;
+  transition: all 0.15s;
+}
+.reset-3d-btn:hover {
+  background: var(--slate-50);
+  border-color: var(--slate-300);
+  color: var(--slate-900);
+}
+.reset-3d-btn svg { flex-shrink: 0; }
+
+/* ============================================================
    PRINT
    ============================================================ */
 @media print {
@@ -580,6 +948,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 
   .no-print { display: none !important; }
   .divider { display: none !important; }
+  .preview-right, .preview-3d-full, .standee-hint { display: none !important; }
 
   .preview {
     overflow: visible !important; padding: 0 !important; margin: 0 !important;
