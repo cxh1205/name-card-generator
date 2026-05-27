@@ -365,13 +365,15 @@ function reset3DView() {
               <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
                 <div class="standee">
                   <div class="leaf leaf-front">
-                    <div class="leaf-face" :style="leaf3DStyle">
+                    <div class="leaf-face leaf-face-front leaf-face-outer" :style="leaf3DStyle">
                       <span class="standee-name">{{ displayName3D }}</span>
                     </div>
+                    <div class="leaf-face leaf-face-back leaf-inner"></div>
                   </div>
                   <div class="leaf leaf-back">
-                    <div class="leaf-face" :style="leaf3DStyle">
-                      <span class="standee-name flip">{{ displayName3D }}</span>
+                    <div class="leaf-face leaf-face-front leaf-inner"></div>
+                    <div class="leaf-face leaf-face-back leaf-face-outer" :style="leaf3DStyle">
+                      <span class="standee-name">{{ displayName3D }}</span>
                     </div>
                   </div>
                 </div>
@@ -400,13 +402,15 @@ function reset3DView() {
             <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
               <div class="standee">
                 <div class="leaf leaf-front">
-                  <div class="leaf-face" :style="leaf3DStyle">
-                    <span class="standee-name">{{ displayName3D }}</span>
+                  <div class="leaf-face leaf-face-front leaf-face-outer" :style="leaf3DStyle">
+                    <span class="standee-name rot-180">{{ displayName3D }}</span>
                   </div>
+                  <div class="leaf-face leaf-face-back leaf-inner"></div>
                 </div>
                 <div class="leaf leaf-back">
-                  <div class="leaf-face" :style="leaf3DStyle">
-                    <span class="standee-name flip">{{ displayName3D }}</span>
+                  <div class="leaf-face leaf-face-front leaf-inner"></div>
+                  <div class="leaf-face leaf-face-back leaf-face-outer" :style="leaf3DStyle">
+                    <span class="standee-name flip-x">{{ displayName3D }}</span>
                   </div>
                 </div>
               </div>
@@ -890,34 +894,38 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 .leaf-face {
   position: absolute;
   inset: 0;
+  border-radius: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 2px;
   overflow: hidden;
   backface-visibility: hidden;
 }
 
-.leaf-front .leaf-face {
-  transform: translateZ(1px);
+.leaf-face-front {
+  /* default — on front face of leaf element */
 }
 
-.leaf-back .leaf-face {
-  transform: translateZ(-1px);
+.leaf-face-back {
+  transform: rotateY(180deg);
 }
 
-.leaf-face::after {
+.leaf-inner {
+  background: #fff;
+}
+
+.leaf-face-outer::after {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-.leaf-front .leaf-face::after {
+.leaf-front .leaf-face-outer::after {
   background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 60%);
 }
 
-.leaf-back .leaf-face::after {
+.leaf-back .leaf-face-outer::after {
   background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.05) 100%);
 }
 
@@ -928,7 +936,11 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   pointer-events: none;
 }
 
-.standee-name.flip {
+.standee-name.rot-180 {
+  transform: rotate(180deg);
+}
+
+.standee-name.flip-x {
   transform: scaleX(-1);
 }
 
