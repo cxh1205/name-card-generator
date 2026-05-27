@@ -13,6 +13,12 @@ const autoFill = ref(true)
 const bgImage = ref(null)
 const imageInput = ref(null)
 
+// ---- third panel (base) ----
+const showBase = ref(false)
+const baseBgColor = ref('#ffffff')
+const baseBgImage = ref(null)
+const baseImageInput = ref(null)
+
 // ---- 3D standee ----
 const show3D = ref(false)
 const rotateX3D = ref(-20)
@@ -57,10 +63,9 @@ const printFontSize = computed(() => {
 
 const cardStyle = computed(() => ({
   backgroundColor: bgColor.value,
-  // CSS vars: screen font-pct, print mm dimensions
   '--font-pct': fontPctEffective.value,
   '--print-w': `${cardSize.value}mm`,
-  '--print-h': `${cardSize.value}mm`,
+  '--print-h': showBase.value ? `${(cardSize.value * 1.5).toFixed(1)}mm` : `${cardSize.value}mm`,
   '--print-fs': printFontSize.value,
 }))
 
@@ -72,6 +77,18 @@ const halfStyle = computed(() => {
   }
   if (bgImage.value) {
     s.backgroundImage = `url(${bgImage.value})`
+    s.backgroundSize = '100% 100%'
+    s.backgroundRepeat = 'no-repeat'
+  }
+  return s
+})
+
+const baseStyle = computed(() => {
+  const s = {
+    backgroundColor: baseBgColor.value,
+  }
+  if (baseBgImage.value) {
+    s.backgroundImage = `url(${baseBgImage.value})`
     s.backgroundSize = '100% 100%'
     s.backgroundRepeat = 'no-repeat'
   }
@@ -122,6 +139,41 @@ function cropTo21(img) {
 function removeBgImage() { bgImage.value = null }
 function doPrint() { window.print() }
 
+// ---- base panel image upload ----
+function triggerBaseUpload() { baseImageInput.value?.click() }
+
+function handleBaseImageUpload(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (ev) => {
+    const img = new Image()
+    img.onload = () => cropBaseImage(img)
+    img.src = ev.target.result
+  }
+  reader.readAsDataURL(file)
+  e.target.value = ''
+}
+
+function cropBaseImage(img) {
+  const canvas = document.createElement('canvas')
+  canvas.width = 800
+  canvas.height = 400
+  const srcW = img.naturalWidth
+  const srcH = img.naturalHeight
+  const srcRatio = srcW / srcH
+  let sx, sy, sw, sh
+  if (srcRatio > 2) {
+    sw = srcH * 2; sh = srcH; sx = (srcW - sw) / 2; sy = 0
+  } else {
+    sw = srcW; sh = srcW / 2; sx = 0; sy = (srcH - sh) / 2
+  }
+  canvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, 800, 400)
+  baseBgImage.value = canvas.toDataURL('image/jpeg', 0.9)
+}
+
+function removeBaseBgImage() { baseBgImage.value = null }
+
 // ---- 3D standee computed & handlers ----
 const displayName3D = computed(() => {
   return names.value.length > 0 ? names.value[0] : '名字'
@@ -141,6 +193,17 @@ const leaf3DStyle = computed(() => {
   }
   if (bgImage.value) {
     s.backgroundImage = `url(${bgImage.value})`
+    s.backgroundSize = '100% 100%'
+  }
+  return s
+})
+
+const base3DStyle = computed(() => {
+  const s = {
+    backgroundColor: baseBgColor.value,
+  }
+  if (baseBgImage.value) {
+    s.backgroundImage = `url(${baseBgImage.value})`
     s.backgroundSize = '100% 100%'
   }
   return s
@@ -246,6 +309,38 @@ function reset3DView() {
         <div class="hint" v-if="bgImage">图片已自动裁剪为 2:1 填充半张卡</div>
       </div>
 
+      <!-- Base Panel (Third Section) -->
+      <div class="panel">
+        <div class="panel-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+          第三联（底部）
+          <label class="auto-check" style="margin-left:auto;font-size:12px">
+            <input type="checkbox" v-model="showBase" />
+            <span>启用</span>
+          </label>
+        </div>
+        <template v-if="showBase">
+          <div class="bg-row">
+            <div class="color-swatch">
+              <input type="color" v-model="baseBgColor" class="color-input" />
+              <span class="color-hex">{{ baseBgColor }}</span>
+            </div>
+            <button class="upload-btn" @click="triggerBaseUpload" :class="{ 'has-image': baseBgImage }">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              {{ baseBgImage ? '更换图片' : '上传图片' }}
+            </button>
+            <input ref="baseImageInput" type="file" accept="image/*" class="hidden-input" @change="handleBaseImageUpload" />
+          </div>
+          <div v-if="baseBgImage" class="img-preview-row">
+            <img :src="baseBgImage" class="img-thumb" />
+            <button class="remove-img" @click="removeBaseBgImage" title="移除图片">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="hint" v-if="baseBgImage">图片已自动裁剪为 2:1 填充底部</div>
+        </template>
+      </div>
+
       <!-- Font -->
       <div class="panel">
         <div class="panel-label">
@@ -322,7 +417,7 @@ function reset3DView() {
 
         <!-- 3D off + has names: cards only -->
         <div v-else-if="!show3D" class="cards-grid" :style="gridStyle">
-          <div v-for="(name, index) in names" :key="index" class="card" :style="cardStyle">
+          <div v-for="(name, index) in names" :key="index" class="card" :class="{ 'has-base': showBase }" :style="cardStyle">
             <div class="half half-top" :style="halfStyle">
               <span class="name" v-html="displayName(name)"></span>
             </div>
@@ -330,6 +425,10 @@ function reset3DView() {
             <div class="half half-bottom" :style="halfStyle">
               <span class="name" v-html="displayName(name)"></span>
             </div>
+            <template v-if="showBase">
+              <div class="divider"></div>
+              <div class="half half-base" :style="baseStyle"></div>
+            </template>
           </div>
         </div>
 
@@ -337,7 +436,7 @@ function reset3DView() {
         <template v-else-if="names.length > 0">
           <div class="preview-left">
             <div class="cards-grid" :style="gridStyle">
-              <div v-for="(name, index) in names" :key="index" class="card" :style="cardStyle">
+              <div v-for="(name, index) in names" :key="index" class="card" :class="{ 'has-base': showBase }" :style="cardStyle">
                 <div class="half half-top" :style="halfStyle">
                   <span class="name" v-html="displayName(name)"></span>
                 </div>
@@ -345,6 +444,10 @@ function reset3DView() {
                 <div class="half half-bottom" :style="halfStyle">
                   <span class="name" v-html="displayName(name)"></span>
                 </div>
+                <template v-if="showBase">
+                  <div class="divider"></div>
+                  <div class="half half-base" :style="baseStyle"></div>
+                </template>
               </div>
             </div>
           </div>
@@ -365,16 +468,17 @@ function reset3DView() {
               <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
                 <div class="standee">
                   <div class="leaf leaf-front">
-                    <div class="leaf-face leaf-face-front leaf-face-outer" :style="leaf3DStyle">
+                    <div class="leaf-face" :style="leaf3DStyle">
                       <span class="standee-name">{{ displayName3D }}</span>
                     </div>
-                    <div class="leaf-face leaf-face-back leaf-inner"></div>
                   </div>
                   <div class="leaf leaf-back">
-                    <div class="leaf-face leaf-face-front leaf-inner"></div>
-                    <div class="leaf-face leaf-face-back leaf-face-outer" :style="leaf3DStyle">
-                      <span class="standee-name">{{ displayName3D }}</span>
+                    <div class="leaf-face" :style="leaf3DStyle">
+                      <span class="standee-name flip">{{ displayName3D }}</span>
                     </div>
+                  </div>
+                  <div v-if="showBase" class="leaf leaf-base">
+                    <div class="leaf-face" :style="base3DStyle"></div>
                   </div>
                 </div>
               </div>
@@ -402,16 +506,17 @@ function reset3DView() {
             <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
               <div class="standee">
                 <div class="leaf leaf-front">
-                  <div class="leaf-face leaf-face-front leaf-face-outer" :style="leaf3DStyle">
-                    <span class="standee-name rot-180">{{ displayName3D }}</span>
+                  <div class="leaf-face" :style="leaf3DStyle">
+                    <span class="standee-name">{{ displayName3D }}</span>
                   </div>
-                  <div class="leaf-face leaf-face-back leaf-inner"></div>
                 </div>
                 <div class="leaf leaf-back">
-                  <div class="leaf-face leaf-face-front leaf-inner"></div>
-                  <div class="leaf-face leaf-face-back leaf-face-outer" :style="leaf3DStyle">
-                    <span class="standee-name flip-x">{{ displayName3D }}</span>
+                  <div class="leaf-face" :style="leaf3DStyle">
+                    <span class="standee-name flip">{{ displayName3D }}</span>
                   </div>
+                </div>
+                <div v-if="showBase" class="leaf leaf-base">
+                  <div class="leaf-face" :style="base3DStyle"></div>
                 </div>
               </div>
             </div>
@@ -766,6 +871,9 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   border-radius: 2px;
   transition: box-shadow 0.2s;
 }
+.card.has-base {
+  aspect-ratio: 2 / 3;
+}
 .card:hover { box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.12); }
 
 .half {
@@ -777,6 +885,10 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 }
 
 .half-top { transform: rotate(180deg); }
+
+.half-base {
+  container-type: unset;
+}
 
 .divider {
   height: 0; flex-shrink: 0;
@@ -891,41 +1003,39 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   transform: rotateX(-30deg);
 }
 
+.leaf-base {
+  top: 48px;
+  height: 130px;
+  transform: rotateX(90deg);
+  transform-origin: center center;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
 .leaf-face {
   position: absolute;
   inset: 0;
-  border-radius: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 2px;
   overflow: hidden;
   backface-visibility: hidden;
+  transform: translateZ(0.5px);
 }
 
-.leaf-face-front {
-  /* default — on front face of leaf element */
-}
-
-.leaf-face-back {
-  transform: rotateY(180deg);
-}
-
-.leaf-inner {
-  background: #fff;
-}
-
-.leaf-face-outer::after {
+.leaf-face::after {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-.leaf-front .leaf-face-outer::after {
+.leaf-front .leaf-face::after {
   background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 60%);
 }
 
-.leaf-back .leaf-face-outer::after {
+.leaf-back .leaf-face::after {
   background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.05) 100%);
 }
 
@@ -936,11 +1046,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   pointer-events: none;
 }
 
-.standee-name.rot-180 {
-  transform: rotate(180deg);
-}
-
-.standee-name.flip-x {
+.standee-name.flip {
   transform: scaleX(-1);
 }
 
@@ -1023,6 +1129,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   .card:last-child { break-after: avoid !important; page-break-after: avoid !important; }
 
   .half { container-type: unset !important; }
+  .half-base { container-type: unset !important; }
   .name { font-size: var(--print-fs) !important; }
 }
 </style>
