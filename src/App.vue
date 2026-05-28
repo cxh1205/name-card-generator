@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import ToggleSwitch from './components/ToggleSwitch.vue'
+import BackgroundPicker from './components/BackgroundPicker.vue'
+import ColorPicker from './components/ColorPicker.vue'
 
 // 类型定义
 interface DragStart {
@@ -24,13 +27,11 @@ const strokeColor = ref('#000000')
 const strokePct = ref(0)
 const autoFill = ref(true)
 const bgImage = ref<string | null>(null)
-const imageInput = ref<HTMLInputElement | null>(null)
 
 // 第三联（底部面板）
 const showBase = ref(false)
 const baseBgColor = ref('#ffffff')
 const baseBgImage = ref<string | null>(null)
-const baseImageInput = ref<HTMLInputElement | null>(null)
 
 // 3D 立牌
 const show3D = ref(false)
@@ -124,78 +125,7 @@ const gridStyle = computed<StyleMap>(() => ({
   maxWidth: '960px',
 }))
 
-// 图片上传
-function triggerUpload(): void { imageInput.value?.click() }
-
-function handleImageUpload(e: Event): void {
-  const input = e.target as HTMLInputElement | null
-  const file = input?.files?.[0]
-  if (!file) return
-  const reader = new FileReader()
-  reader.onload = (ev) => {
-    const img = new Image()
-    img.onload = () => cropTo21(img)
-    img.src = ev.target?.result as string
-  }
-  reader.readAsDataURL(file)
-  input.value = ''
-}
-
-function cropTo21(img: HTMLImageElement): void {
-  const canvas = document.createElement('canvas')
-  canvas.width = 800
-  canvas.height = 400
-  const srcW = img.naturalWidth
-  const srcH = img.naturalHeight
-  const srcRatio = srcW / srcH
-  let sx: number, sy: number, sw: number, sh: number
-  if (srcRatio > 2) {
-    sw = srcH * 2; sh = srcH; sx = (srcW - sw) / 2; sy = 0
-  } else {
-    sw = srcW; sh = srcW / 2; sx = 0; sy = (srcH - sh) / 2
-  }
-  canvas.getContext('2d')!.drawImage(img, sx, sy, sw, sh, 0, 0, 800, 400)
-  bgImage.value = canvas.toDataURL('image/jpeg', 0.9)
-}
-
-function removeBgImage(): void { bgImage.value = null }
 function doPrint(): void { window.print() }
-
-// 第三联图片上传
-function triggerBaseUpload(): void { baseImageInput.value?.click() }
-
-function handleBaseImageUpload(e: Event): void {
-  const input = e.target as HTMLInputElement | null
-  const file = input?.files?.[0]
-  if (!file) return
-  const reader = new FileReader()
-  reader.onload = (ev) => {
-    const img = new Image()
-    img.onload = () => cropBaseImage(img)
-    img.src = ev.target?.result as string
-  }
-  reader.readAsDataURL(file)
-  input.value = ''
-}
-
-function cropBaseImage(img: HTMLImageElement): void {
-  const canvas = document.createElement('canvas')
-  canvas.width = 800
-  canvas.height = 400
-  const srcW = img.naturalWidth
-  const srcH = img.naturalHeight
-  const srcRatio = srcW / srcH
-  let sx: number, sy: number, sw: number, sh: number
-  if (srcRatio > 2) {
-    sw = srcH * 2; sh = srcH; sx = (srcW - sw) / 2; sy = 0
-  } else {
-    sw = srcW; sh = srcW / 2; sx = 0; sy = (srcH - sh) / 2
-  }
-  canvas.getContext('2d')!.drawImage(img, sx, sy, sw, sh, 0, 0, 800, 400)
-  baseBgImage.value = canvas.toDataURL('image/jpeg', 0.9)
-}
-
-function removeBaseBgImage(): void { baseBgImage.value = null }
 
 // 3D 立牌计算属性
 const displayName3D = computed(() => {
@@ -390,25 +320,7 @@ function onSlideLeave(el: Element, done: () => void): void {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           背景
         </div>
-        <div class="bg-row">
-          <div v-if="bgImage" class="img-select" @click="removeBgImage">
-            <img :src="bgImage" class="img-thumb-lg" />
-            <div class="img-delete-overlay">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              <span>删除</span>
-            </div>
-          </div>
-          <div v-else class="color-swatch">
-            <input type="color" v-model="bgColor" class="color-input" />
-            <span class="color-hex">{{ bgColor }}</span>
-          </div>
-          <button class="upload-btn" @click="triggerUpload" :class="{ 'has-image': bgImage }">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            {{ bgImage ? '更换图片' : '上传图片' }}
-          </button>
-          <input ref="imageInput" type="file" accept="image/*" class="hidden-input" @change="handleImageUpload" />
-        </div>
-        <div class="hint" v-if="bgImage">图片已自动裁剪为 2:1 填充半张卡</div>
+        <BackgroundPicker v-model:color="bgColor" v-model:image="bgImage" hint="图片已自动裁剪为 2:1 填充半张卡" />
       </div>
 
       <!-- 第三联（底部面板） -->
@@ -416,9 +328,7 @@ function onSlideLeave(el: Element, done: () => void): void {
         <div class="panel-label panel-label-clickable" @click="showBase = !showBase">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
           第三联（底部）
-          <span class="toggle-sw" style="margin-left:auto" @click.stop="showBase = !showBase">
-            <span class="toggle-track" :class="{ active: showBase }"><span class="toggle-thumb"></span></span>
-          </span>
+          <ToggleSwitch v-model="showBase" style="margin-left: auto" />
         </div>
         <Transition
           @before-enter="onSlideBeforeEnter"
@@ -427,25 +337,7 @@ function onSlideLeave(el: Element, done: () => void): void {
           @leave="onSlideLeave"
         >
           <div v-if="showBase" class="expand-inner" style="padding-top:8px;display:flex;flex-direction:column;gap:8px">
-            <div class="bg-row">
-              <div v-if="baseBgImage" class="img-select" @click="removeBaseBgImage">
-                <img :src="baseBgImage" class="img-thumb-lg" />
-                <div class="img-delete-overlay">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                  <span>删除</span>
-                </div>
-              </div>
-              <div v-else class="color-swatch">
-                <input type="color" v-model="baseBgColor" class="color-input" />
-                <span class="color-hex">{{ baseBgColor }}</span>
-              </div>
-              <button class="upload-btn" @click="triggerBaseUpload" :class="{ 'has-image': baseBgImage }">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                {{ baseBgImage ? '更换图片' : '上传图片' }}
-              </button>
-              <input ref="baseImageInput" type="file" accept="image/*" class="hidden-input" @change="handleBaseImageUpload" />
-            </div>
-            <div class="hint" v-if="baseBgImage">图片已自动裁剪为 2:1 填充底部</div>
+            <BackgroundPicker v-model:color="baseBgColor" v-model:image="baseBgImage" hint="图片已自动裁剪为 2:1 填充底部" />
           </div>
         </Transition>
       </div>
@@ -459,7 +351,7 @@ function onSlideLeave(el: Element, done: () => void): void {
         <div class="font-grid">
           <div class="font-item">
             <span class="font-item-label">颜色</span>
-            <input type="color" v-model="fontColor" class="color-input small" />
+            <ColorPicker v-model="fontColor" />
           </div>
           <div class="font-item">
             <span class="font-item-label">粗细</span>
@@ -475,7 +367,7 @@ function onSlideLeave(el: Element, done: () => void): void {
         <div class="font-grid" style="margin-top:8px">
           <div class="font-item">
             <span class="font-item-label">描边颜色</span>
-            <input type="color" v-model="strokeColor" class="color-input small" />
+            <ColorPicker v-model="strokeColor" />
           </div>
           <div class="font-item">
             <span class="font-item-label">描边粗细 {{ strokePct }}%</span>
@@ -488,9 +380,7 @@ function onSlideLeave(el: Element, done: () => void): void {
         </div>
         <div class="toggle-row" @click="autoFill = !autoFill">
           <span class="toggle-label-text">文字自动撑满卡片</span>
-          <span class="toggle-sw" @click.stop="autoFill = !autoFill">
-            <span class="toggle-track" :class="{ active: autoFill }"><span class="toggle-thumb"></span></span>
-          </span>
+          <ToggleSwitch v-model="autoFill" />
         </div>
         <Transition
           @before-enter="onSlideBeforeEnter"
@@ -530,7 +420,7 @@ function onSlideLeave(el: Element, done: () => void): void {
         </div>
         <div class="col-bar-spacer"></div>
         <span class="toggle-3d" @click="show3D = !show3D">
-          <span class="toggle-track" :class="{ active: show3D }"><span class="toggle-thumb"></span></span>
+          <ToggleSwitch v-model="show3D" />
           <span class="toggle-label">3D 立牌</span>
         </span>
       </div>
@@ -847,50 +737,16 @@ html, body, #app {
 .slider-end { font-size: 11px; color: var(--slate-400); font-weight: 500; flex-shrink: 0; }
 input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 
-/* 背景设置 */
-.bg-row { display: flex; gap: 8px; align-items: center; }
-
-.color-swatch {
-  display: flex; align-items: center; gap: 8px;
-  background: #fff; border: 1px solid var(--slate-200);
-  border-radius: 6px; padding: 5px 8px; flex: 1;
-}
-
-.color-input {
-  width: 26px; height: 26px;
-  border: none; border-radius: 4px; cursor: pointer; padding: 0; background: none;
-}
-.color-input.small { width: 24px; height: 24px; }
-.color-input::-webkit-color-swatch-wrapper { padding: 0; }
-.color-input::-webkit-color-swatch { border-radius: 3px; border: 1px solid rgba(0,0,0,0.1); }
-
-.color-hex {
-  font-family: "SF Mono", "Consolas", "Menlo", monospace;
-  font-size: 12px; color: var(--slate-500);
-}
-
-.upload-btn {
-  display: flex; align-items: center; gap: 5px;
-  padding: 7px 10px;
-  border: 1px dashed var(--slate-300); border-radius: 6px;
-  background: #fff; color: var(--slate-500);
-  font-size: 12.5px; cursor: pointer;
-  white-space: nowrap; transition: all 0.15s; font-family: inherit;
-}
-.upload-btn:hover { border-color: var(--blue-500); color: var(--blue-600); background: var(--blue-50); }
-.upload-btn.has-image { border-style: solid; border-color: var(--slate-300); }
-
-.hidden-input { display: none; }
-
 /* 字体设置 */
-.font-grid { display: flex; gap: 8px; }
-.font-item { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.font-grid { display: flex; gap: 8px; align-items: flex-end; }
+.font-item { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .font-item-label { font-size: 11px; color: var(--slate-400); font-weight: 500; }
 
 .select {
   padding: 5px 6px; border: 1px solid var(--slate-200);
   border-radius: 5px; font-size: 12px; font-family: inherit;
   color: var(--slate-700); background: #fff; cursor: pointer;
+  height: 30px; box-sizing: border-box;
 }
 .select:focus { outline: none; border-color: var(--blue-500); }
 
@@ -940,38 +796,11 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 
 .col-bar-spacer { flex: 1; }
 
-.toggle-3d,
-.toggle-sw {
+.toggle-3d {
   display: flex; align-items: center; gap: 8px;
   cursor: pointer; user-select: none;
   font-size: 13px; font-weight: 500; color: var(--slate-700);
   white-space: nowrap;
-}
-
-/* 通用开关：所有 toggle 共用此样式 */
-.toggle-track {
-  width: 36px; height: 20px;
-  background: var(--slate-300);
-  border-radius: 10px;
-  position: relative;
-  transition: background 0.2s;
-  flex-shrink: 0;
-}
-.toggle-track.active {
-  background: var(--blue-600);
-}
-
-.toggle-thumb {
-  position: absolute;
-  top: 2px; left: 2px;
-  width: 16px; height: 16px;
-  background: #fff;
-  border-radius: 50%;
-  transition: transform 0.2s;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-}
-.toggle-track.active .toggle-thumb {
-  transform: translateX(16px);
 }
 
 /* 展开 / 折叠由 JS 钩子函数控制过渡 */
@@ -1001,43 +830,6 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   font-size: 13px;
   color: var(--slate-700);
   font-weight: 500;
-}
-
-/* 图片缩略图（悬停出现删除按钮） */
-.img-select {
-  position: relative;
-  flex: 1;
-  border-radius: 6px;
-  overflow: hidden;
-}
-.img-thumb-lg {
-  width: 100%;
-  height: 54px;
-  object-fit: cover;
-  display: block;
-  border-radius: 6px;
-  border: 1px solid var(--slate-200);
-}
-.img-delete-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(239, 68, 68, 0.78);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  opacity: 0;
-  transition: opacity 0.2s;
-  border-radius: 6px;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  pointer-events: none;
-}
-.img-select:hover .img-delete-overlay {
-  opacity: 1;
-  pointer-events: auto;
 }
 
 /* 预览区 */
