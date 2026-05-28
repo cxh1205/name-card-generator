@@ -33,7 +33,6 @@ function onHexInput(e: Event): void {
       emit('update:modelValue', normalized)
       hexText.value = normalized
     } else {
-      // 输入不合法，回退到当前有效值
       hexText.value = props.modelValue
     }
   }, 500)
@@ -56,13 +55,18 @@ function normalizeHex(input: string): string | null {
 </script>
 
 <template>
-  <div class="color-picker">
-    <input type="color" :value="modelValue" @input="onColorInput" class="cp-swatch" />
+  <div class="inline-flex items-center gap-1.5 bg-white border border-slate-200 rounded-md px-1.5 h-[30px] box-border">
+    <input
+      type="color"
+      :value="modelValue"
+      @input="onColorInput"
+      class="cp-swatch w-[22px] h-[22px] border-none rounded-sm cursor-pointer p-0 bg-none shrink-0"
+    />
     <input
       type="text"
       :value="hexText"
       @input="onHexInput"
-      class="cp-hex"
+      class="w-[58px] shrink-0 border-none outline-none font-mono text-[11px] text-slate-700 bg-transparent p-0 leading-[22px] placeholder:text-slate-300 focus:text-slate-900"
       maxlength="7"
       placeholder="#000000"
       spellcheck="false"
@@ -71,29 +75,6 @@ function normalizeHex(input: string): string | null {
 </template>
 
 <style scoped>
-.color-picker {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #fff;
-  border: 1px solid var(--slate-200);
-  border-radius: 5px;
-  padding: 3px 6px;
-  height: 30px;
-  box-sizing: border-box;
-}
-
-.cp-swatch {
-  width: 22px;
-  height: 22px;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  padding: 0;
-  background: none;
-  flex-shrink: 0;
-}
-
 .cp-swatch::-webkit-color-swatch-wrapper {
   padding: 0;
 }
@@ -101,27 +82,5 @@ function normalizeHex(input: string): string | null {
 .cp-swatch::-webkit-color-swatch {
   border-radius: 3px;
   border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.cp-hex {
-  width: 58px;
-  flex-shrink: 0;
-  border: none;
-  outline: none;
-  font-family: "SF Mono", "Consolas", "Menlo", monospace;
-  font-size: 11px;
-  color: var(--slate-700);
-  background: transparent;
-  padding: 0;
-  line-height: 22px;
-}
-
-.cp-hex::placeholder {
-  color: var(--slate-300);
-  font-family: "SF Mono", "Consolas", "Menlo", monospace;
-}
-
-.cp-hex:focus {
-  color: var(--slate-900);
 }
 </style>

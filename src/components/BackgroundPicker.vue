@@ -64,99 +64,39 @@ function removeImage() {
 
 <template>
   <div>
-    <div class="bg-row">
-      <div v-if="image" class="img-select" @click="removeImage">
-        <img :src="image" class="img-thumb-lg" />
-        <div class="img-delete-overlay">
+    <div class="flex gap-2 items-center">
+      <div
+        v-if="image"
+        class="group relative flex-1 rounded-md overflow-hidden"
+        @click="removeImage"
+      >
+        <img
+          :src="image"
+          class="w-full h-[54px] object-cover block rounded-md border border-slate-200"
+        />
+        <div
+          class="absolute inset-0 flex items-center justify-center gap-1.5 opacity-0 transition-opacity duration-200 rounded-md text-white text-[13px] font-semibold cursor-pointer pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
+          style="background: rgba(239, 68, 68, 0.78)"
+        >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           <span>删除</span>
         </div>
       </div>
       <ColorPicker v-else v-model="colorModel" style="flex: 1" />
-      <button class="upload-btn" @click="triggerUpload" :class="{ 'has-image': image }">
+      <button
+        :class="[
+          'inline-flex items-center gap-1.5 px-2.5 py-[7px] border border-dashed rounded-md bg-white text-slate-500 text-[12.5px] cursor-pointer whitespace-nowrap transition-all duration-150 font-sans',
+          image
+            ? 'border-solid border-slate-300'
+            : 'border-slate-300 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50',
+        ]"
+        @click="triggerUpload"
+      >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         {{ image ? '更换图片' : '上传图片' }}
       </button>
-      <input ref="fileInput" type="file" accept="image/*" class="hidden-input" @change="handleUpload" />
+      <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleUpload" />
     </div>
-    <div v-if="hint && image" class="hint">{{ hint }}</div>
+    <div v-if="hint && image" class="text-[11.5px] text-slate-400 leading-[1.4] mt-2">{{ hint }}</div>
   </div>
 </template>
-
-<style scoped>
-.bg-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.upload-btn {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 7px 10px;
-  border: 1px dashed var(--slate-300);
-  border-radius: 6px;
-  background: #fff;
-  color: var(--slate-500);
-  font-size: 12.5px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s;
-  font-family: inherit;
-}
-
-.upload-btn:hover {
-  border-color: var(--blue-500);
-  color: var(--blue-600);
-  background: var(--blue-50);
-}
-
-.upload-btn.has-image {
-  border-style: solid;
-  border-color: var(--slate-300);
-}
-
-.hidden-input {
-  display: none;
-}
-
-.img-select {
-  position: relative;
-  flex: 1;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.img-thumb-lg {
-  width: 100%;
-  height: 54px;
-  object-fit: cover;
-  display: block;
-  border-radius: 6px;
-  border: 1px solid var(--slate-200);
-}
-
-.img-delete-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(239, 68, 68, 0.78);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  opacity: 0;
-  transition: opacity 0.2s;
-  border-radius: 6px;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  pointer-events: none;
-}
-
-.img-select:hover .img-delete-overlay {
-  opacity: 1;
-  pointer-events: auto;
-}
-</style>

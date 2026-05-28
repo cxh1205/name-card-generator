@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import ToggleSwitch from './components/ToggleSwitch.vue'
 import BackgroundPicker from './components/BackgroundPicker.vue'
 import ColorPicker from './components/ColorPicker.vue'
@@ -126,6 +126,20 @@ const gridStyle = computed<StyleMap>(() => ({
 }))
 
 function doPrint(): void { window.print() }
+
+// 动态设置打印页面尺寸，跟随纸张边长和第三联开关变化
+onMounted(() => {
+  const styleEl = document.createElement('style')
+  styleEl.id = 'print-page-size'
+  document.head.appendChild(styleEl)
+
+  const update = () => {
+    const w = cardSize.value
+    const h = showBase.value ? cardSize.value * 1.5 : cardSize.value
+    styleEl.textContent = `@page { size: ${w}mm ${h}mm; margin: 0; }`
+  }
+  watch([cardSize, showBase], update, { immediate: true })
+})
 
 // 3D 立牌计算属性
 const displayName3D = computed(() => {
@@ -271,62 +285,62 @@ function onSlideLeave(el: Element, done: () => void): void {
 </script>
 
 <template>
-  <div class="app">
+  <div class="app flex h-screen overflow-hidden">
     <!-- 左侧边栏 -->
-    <aside class="sidebar no-print">
-      <a class="sidebar-header" href="https://github.com/cxh1205/name-card-generator" target="_blank" rel="noopener" title="查看开源代码">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        <span class="logo-text-wrap">
+    <aside class="sidebar no-print w-[312px] min-w-[312px] bg-white border-r border-slate-200 flex flex-col gap-1.5 overflow-y-auto px-4 z-10">
+      <a class="sidebar-header sticky top-0 z-[2] flex items-center gap-2.5 -mx-4 px-5 py-3.5 bg-white border-b border-slate-200 no-underline cursor-pointer transition-colors duration-150 hover:bg-slate-50" href="https://github.com/cxh1205/name-card-generator" target="_blank" rel="noopener" title="查看开源代码">
+        <svg class="text-[#24292f] shrink-0" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span class="logo-text-wrap relative text-base font-bold tracking-[-0.2px] whitespace-nowrap text-slate-900">
           <span class="logo-text-default">名牌生成器</span>
           <span class="logo-text-hover">查看开源代码</span>
         </span>
       </a>
 
       <!-- 名字输入 -->
-      <div class="panel">
-        <div class="panel-label">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
+        <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px]">
+          <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           名字输入
-          <span class="badge" v-if="names.length">{{ names.length }}</span>
+          <span v-if="names.length" class="ml-auto bg-blue-600 text-white text-[11px] font-semibold px-[7px] py-px rounded-[10px] min-w-5 text-center">{{ names.length }}</span>
         </div>
         <textarea
           v-model="namesText"
           placeholder="每行一个名字，用空格控制字间距&#10;例如：张  三"
           rows="10"
           spellcheck="false"
-          class="name-input"
+          class="name-input w-full px-3 py-2.5 border border-slate-200 rounded-md text-[13.5px] font-sans leading-[1.6] resize-y bg-white whitespace-pre-wrap transition-[border-color,box-shadow] duration-150 placeholder:text-slate-300"
         ></textarea>
-        <div class="hint">支持换行、逗号、顿号分隔</div>
+        <div class="text-[11.5px] text-slate-400 leading-[1.4]">支持换行、逗号、顿号分隔</div>
       </div>
 
       <!-- 纸张边长 -->
-      <div class="panel">
-        <div class="panel-label">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg>
+      <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
+        <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px]">
+          <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg>
           纸张边长
-          <span class="val">{{ cardSize }} mm</span>
+          <span class="font-medium text-blue-600 ml-auto text-xs">{{ cardSize }} mm</span>
         </div>
-        <div class="hint" style="margin-bottom:4px">屏幕预览与打印均使用此尺寸</div>
-        <div class="slider-row">
-          <span class="slider-end">60</span>
-          <input type="range" v-model.number="cardSize" min="60" max="200" step="5" />
-          <span class="slider-end">200</span>
+        <div class="text-[11.5px] text-slate-400 leading-[1.4] mb-1">屏幕预览与打印均使用此尺寸</div>
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] text-slate-400 font-medium shrink-0">60</span>
+          <input type="range" v-model.number="cardSize" min="60" max="200" step="5" class="flex-1 accent-blue-600 h-1" />
+          <span class="text-[11px] text-slate-400 font-medium shrink-0">200</span>
         </div>
       </div>
 
       <!-- 背景设置 -->
-      <div class="panel">
-        <div class="panel-label">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
+        <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px]">
+          <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           背景
         </div>
         <BackgroundPicker v-model:color="bgColor" v-model:image="bgImage" hint="图片已自动裁剪为 2:1 填充半张卡" />
       </div>
 
       <!-- 第三联（底部面板） -->
-      <div class="panel">
-        <div class="panel-label panel-label-clickable" @click="showBase = !showBase">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+      <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
+        <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px] cursor-pointer transition-colors duration-150 rounded-md px-1.5 py-[3px] -mx-1.5 -my-[3px] hover:bg-slate-200" @click="showBase = !showBase">
+          <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
           第三联（底部）
           <ToggleSwitch v-model="showBase" style="margin-left: auto" />
         </div>
@@ -343,19 +357,19 @@ function onSlideLeave(el: Element, done: () => void): void {
       </div>
 
       <!-- 字体设置 -->
-      <div class="panel">
-        <div class="panel-label">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+      <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
+        <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px]">
+          <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
           字体
         </div>
-        <div class="font-grid">
-          <div class="font-item">
-            <span class="font-item-label">颜色</span>
+        <div class="flex gap-2 items-end">
+          <div class="flex-1 flex flex-col gap-1 min-w-0">
+            <span class="text-[11px] text-slate-400 font-medium">颜色</span>
             <ColorPicker v-model="fontColor" />
           </div>
-          <div class="font-item">
-            <span class="font-item-label">粗细</span>
-            <select v-model.number="fontWeight" class="select">
+          <div class="flex-1 flex flex-col gap-1 min-w-0">
+            <span class="text-[11px] text-slate-400 font-medium">粗细</span>
+            <select v-model.number="fontWeight" class="px-1.5 py-[5px] border border-slate-200 rounded-md text-xs font-sans text-slate-700 bg-white cursor-pointer h-[30px] box-border focus:outline-none focus:border-blue-500">
               <option :value="300">Light</option>
               <option :value="400">Regular</option>
               <option :value="600">Semi Bold</option>
@@ -364,22 +378,22 @@ function onSlideLeave(el: Element, done: () => void): void {
             </select>
           </div>
         </div>
-        <div class="font-grid" style="margin-top:8px">
-          <div class="font-item">
-            <span class="font-item-label">描边颜色</span>
+        <div class="flex gap-2 items-end mt-2">
+          <div class="flex-1 flex flex-col gap-1 min-w-0">
+            <span class="text-[11px] text-slate-400 font-medium">描边颜色</span>
             <ColorPicker v-model="strokeColor" />
           </div>
-          <div class="font-item">
-            <span class="font-item-label">描边粗细 {{ strokePct }}%</span>
-            <div class="slider-row">
-              <span class="slider-end">0</span>
-              <input type="range" v-model.number="strokePct" min="0" max="8" step="0.5" />
-              <span class="slider-end">8%</span>
+          <div class="flex-1 flex flex-col gap-1 min-w-0">
+            <span class="text-[11px] text-slate-400 font-medium">描边粗细 {{ strokePct }}%</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] text-slate-400 font-medium shrink-0">0</span>
+              <input type="range" v-model.number="strokePct" min="0" max="8" step="0.5" class="flex-1 accent-blue-600 h-1" />
+              <span class="text-[11px] text-slate-400 font-medium shrink-0">8%</span>
             </div>
           </div>
         </div>
-        <div class="toggle-row" @click="autoFill = !autoFill">
-          <span class="toggle-label-text">文字自动撑满卡片</span>
+        <div class="flex items-center cursor-pointer select-none py-0.5" @click="autoFill = !autoFill">
+          <span class="flex-1 text-[13px] text-slate-700 font-medium">文字自动撑满卡片</span>
           <ToggleSwitch v-model="autoFill" />
         </div>
         <Transition
@@ -389,21 +403,25 @@ function onSlideLeave(el: Element, done: () => void): void {
           @leave="onSlideLeave"
         >
           <div v-if="!autoFill" class="expand-inner" style="padding-top:8px;display:flex;flex-direction:column;gap:4px">
-            <div class="slider-row">
-              <span class="slider-end">10%</span>
-              <input type="range" v-model.number="fontPct" min="10" max="95" step="1" />
-              <span class="slider-end">95%</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] text-slate-400 font-medium shrink-0">10%</span>
+              <input type="range" v-model.number="fontPct" min="10" max="95" step="1" class="flex-1 accent-blue-600 h-1" />
+              <span class="text-[11px] text-slate-400 font-medium shrink-0">95%</span>
             </div>
           </div>
         </Transition>
-        <span class="auto-badge">
-          {{ autoFill ? '自动' : '手动' }}：字号占半卡高度的 <strong>{{ fontPctEffective }}%</strong>
+        <span class="text-[11.5px] text-slate-500 mt-0.5">
+          {{ autoFill ? '自动' : '手动' }}：字号占半卡高度的 <strong class="text-blue-600">{{ fontPctEffective }}%</strong>
         </span>
       </div>
 
       <!-- 打印按钮（吸底固定） -->
-      <div class="print-sticky">
-        <button class="print-btn" @click="doPrint" :disabled="names.length === 0">
+      <div class="print-sticky sticky bottom-0 bg-white mt-auto -mx-4 px-4 pt-3 pb-4 border-t border-slate-200">
+        <button
+          class="flex items-center justify-center gap-2 w-full p-3 bg-blue-600 text-white border-none rounded-lg text-[15px] font-semibold cursor-pointer transition-all duration-150 font-sans hover:not-disabled:bg-blue-700 hover:not-disabled:-translate-y-px hover:not-disabled:shadow-[0_4px_12px_rgba(37,99,235,0.35)] active:not-disabled:translate-y-0 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed disabled:shadow-none"
+          @click="doPrint"
+          :disabled="names.length === 0"
+        >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 12H4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           打印 {{ names.length }} 张名牌
         </button>
@@ -411,68 +429,91 @@ function onSlideLeave(el: Element, done: () => void): void {
     </aside>
 
     <!-- 右侧面板 -->
-    <div class="right-panel">
+    <div class="right-panel flex-1 flex flex-col overflow-hidden">
       <!-- 列数切换 & 3D 开关 -->
-      <div class="col-bar no-print">
-        <span class="col-bar-label">预览列数</span>
-        <div class="btn-group">
-          <button v-for="n in [1,2,3]" :key="n" :class="{ active: columns === n }" @click="columns = n">{{ n }} 列</button>
+      <div class="col-bar no-print flex items-center gap-2.5 px-5 py-2 bg-white border-b border-slate-200 shrink-0">
+        <span class="text-[13px] font-semibold text-slate-700 whitespace-nowrap">预览列数</span>
+        <div class="btn-group flex gap-px bg-slate-200 rounded-md p-0.5">
+          <button
+            v-for="n in [1,2,3]"
+            :key="n"
+            :class="{ 'bg-white text-slate-900 font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.08)]': columns === n }"
+            class="grow py-1.5 px-4 border-none bg-transparent rounded-[5px] text-[13px] font-medium cursor-pointer text-slate-500 transition-all duration-150 hover:text-slate-700 hover:bg-white/50 whitespace-nowrap"
+            @click="columns = n"
+          >{{ n }} 列</button>
         </div>
-        <div class="col-bar-spacer"></div>
-        <span class="toggle-3d" @click="show3D = !show3D">
+        <div class="flex-1"></div>
+        <span class="inline-flex items-center gap-2 cursor-pointer select-none text-[13px] font-medium text-slate-700 whitespace-nowrap" @click="show3D = !show3D">
           <ToggleSwitch v-model="show3D" />
-          <span class="toggle-label">3D 立牌</span>
+          <span>3D 立牌</span>
         </span>
       </div>
 
       <!-- 预览区 -->
-      <main class="preview" :class="{ 'preview-split': show3D && names.length > 0 }">
+      <main
+        class="preview flex-1 overflow-auto flex items-start justify-center"
+        :class="{ 'flex-row items-stretch': show3D && names.length > 0 }"
+        style="background: radial-gradient(circle, #d4d4d8 1px, transparent 1px) 0 0 / 20px 20px, #e8eaed"
+      >
         <!-- 无名字时的空状态提示 -->
-        <div v-if="!show3D && names.length === 0" class="empty-state">
-          <div class="empty-icon">
+        <div v-if="!show3D && names.length === 0" class="flex flex-col items-center justify-center mt-[18vh] gap-2.5 text-center">
+          <div class="mb-2 opacity-60">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
           </div>
-          <p class="empty-title">在左侧输入名字开始生成名牌</p>
-          <p class="empty-desc">名字将自动排版为可折叠的三角形名牌</p>
+          <p class="text-base font-semibold text-slate-500">在左侧输入名字开始生成名牌</p>
+          <p class="text-[13px] text-slate-400">名字将自动排版为可折叠的三角形名牌</p>
         </div>
 
         <!-- 仅卡片预览（3D 关闭时） -->
-        <div v-else-if="!show3D" class="cards-grid" :style="gridStyle">
-          <div v-for="(name, index) in names" :key="index" class="card" :class="{ 'has-base': showBase }" :style="cardStyle">
-            <div class="half half-top" :style="halfStyle">
-              <span class="name" v-html="displayName(name)"></span>
+        <div v-else-if="!show3D" class="cards-grid grid content-start" :style="gridStyle">
+          <div
+            v-for="(name, index) in names"
+            :key="index"
+            class="card flex flex-col w-full rounded-sm transition-shadow duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.12)]"
+            :class="showBase ? 'aspect-[2/3]' : 'aspect-square'"
+            :style="cardStyle"
+          >
+            <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative half-top rotate-180" :style="halfStyle">
+              <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
             </div>
-            <div class="divider"></div>
-            <div class="half half-bottom" :style="halfStyle">
-              <span class="name" v-html="displayName(name)"></span>
+            <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+            <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="halfStyle">
+              <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
             </div>
             <template v-if="showBase">
-              <div class="divider"></div>
-              <div class="half half-base" :style="baseStyle"></div>
+              <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+              <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="baseStyle"></div>
             </template>
           </div>
         </div>
 
         <!-- 3D + 卡片分屏预览 -->
         <template v-else-if="names.length > 0">
-          <div class="preview-left">
-            <div class="cards-grid" :style="gridStyle">
-              <div v-for="(name, index) in names" :key="index" class="card" :class="{ 'has-base': showBase }" :style="cardStyle">
-                <div class="half half-top" :style="halfStyle">
-                  <span class="name" v-html="displayName(name)"></span>
+          <div class="flex-1 overflow-auto flex items-start justify-center" style="background: radial-gradient(circle, #d4d4d8 1px, transparent 1px) 0 0 / 20px 20px, #e8eaed">
+            <div class="cards-grid grid content-start" :style="gridStyle">
+              <div
+                v-for="(name, index) in names"
+                :key="index"
+                class="card flex flex-col w-full rounded-sm transition-shadow duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.12)]"
+                :class="showBase ? 'aspect-[2/3]' : 'aspect-square'"
+                :style="cardStyle"
+              >
+                <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative half-top rotate-180" :style="halfStyle">
+                  <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
                 </div>
-                <div class="divider"></div>
-                <div class="half half-bottom" :style="halfStyle">
-                  <span class="name" v-html="displayName(name)"></span>
+                <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+                <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="halfStyle">
+                  <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
                 </div>
                 <template v-if="showBase">
-                  <div class="divider"></div>
-                  <div class="half half-base" :style="baseStyle"></div>
+                  <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+                  <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="baseStyle"></div>
                 </template>
               </div>
             </div>
           </div>
-          <div class="preview-right"
+          <div class="flex-1 overflow-hidden flex flex-col items-center justify-center border-l border-slate-200 cursor-grab select-none relative active:cursor-grabbing"
+               style="background: radial-gradient(circle, #d4d4d8 1px, transparent 1px) 0 0 / 20px 20px, #e8eaed"
                @mousedown="pointerDown3D"
                @mousemove="pointerMove3D"
                @mouseup="pointerUp3D"
@@ -481,11 +522,11 @@ function onSlideLeave(el: Element, done: () => void): void {
                @touchmove.prevent="pointerMove3D"
                @touchend="pointerUp3D"
                @wheel.prevent="onWheel3D">
-            <button class="reset-3d-btn no-print" @click="reset3DView" title="回正视角">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            <button class="reset-3d-btn no-print absolute top-2.5 right-2.5 flex items-center gap-1 px-2.5 py-[5px] border border-slate-200 rounded-md bg-white text-slate-600 text-xs font-sans cursor-pointer z-[5] transition-all duration-150 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900" @click="reset3DView" title="回正视角">
+              <svg class="shrink-0" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
               回正
             </button>
-            <div class="standee-scene">
+            <div class="standee-scene flex flex-col items-center justify-center">
               <div class="standee-cam" :style="camStyle">
                 <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
                   <div class="standee" :style="standeeVars">
@@ -513,12 +554,13 @@ function onSlideLeave(el: Element, done: () => void): void {
               </div>
               <div class="standee-shadow"></div>
             </div>
-            <p class="standee-hint">拖拽旋转 / 滚轮缩放</p>
+            <p class="standee-hint mt-2.5 text-xs text-slate-400 pointer-events-none">拖拽旋转 / 滚轮缩放</p>
           </div>
         </template>
 
         <!-- 仅 3D 立牌全宽显示（无名字时） -->
-        <div v-else class="preview-3d-full"
+        <div v-else class="flex-1 self-stretch overflow-hidden flex flex-col items-center justify-center cursor-grab select-none relative active:cursor-grabbing"
+             style="background: radial-gradient(circle, #d4d4d8 1px, transparent 1px) 0 0 / 20px 20px, #e8eaed"
              @mousedown="pointerDown3D"
              @mousemove="pointerMove3D"
              @mouseup="pointerUp3D"
@@ -527,11 +569,11 @@ function onSlideLeave(el: Element, done: () => void): void {
              @touchmove.prevent="pointerMove3D"
              @touchend="pointerUp3D"
              @wheel.prevent="onWheel3D">
-          <button class="reset-3d-btn no-print" @click="reset3DView" title="回正视角">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          <button class="reset-3d-btn no-print absolute top-2.5 right-2.5 flex items-center gap-1 px-2.5 py-[5px] border border-slate-200 rounded-md bg-white text-slate-600 text-xs font-sans cursor-pointer z-[5] transition-all duration-150 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900" @click="reset3DView" title="回正视角">
+            <svg class="shrink-0" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
             回正
           </button>
-          <div class="standee-scene">
+          <div class="standee-scene flex flex-col items-center justify-center">
             <div class="standee-cam" :style="camStyle">
               <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
                 <div class="standee" :style="standeeVars">
@@ -556,7 +598,7 @@ function onSlideLeave(el: Element, done: () => void): void {
             </div>
             <div class="standee-shadow"></div>
           </div>
-          <p class="standee-hint">拖拽旋转 / 滚轮缩放</p>
+          <p class="standee-hint mt-2.5 text-xs text-slate-400 pointer-events-none">拖拽旋转 / 滚轮缩放</p>
         </div>
       </main>
     </div>
@@ -564,8 +606,6 @@ function onSlideLeave(el: Element, done: () => void): void {
 </template>
 
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
 /* 滚动条 */
 ::-webkit-scrollbar {
   width: 6px;
@@ -582,390 +622,66 @@ function onSlideLeave(el: Element, done: () => void): void {
   background: #94a3b8;
 }
 
-:root {
-  --slate-50:  #f8fafc;
-  --slate-100: #f1f5f9;
-  --slate-200: #e2e8f0;
-  --slate-300: #cbd5e1;
-  --slate-400: #94a3b8;
-  --slate-500: #64748b;
-  --slate-700: #334155;
-  --slate-900: #0f172a;
-  --blue-500:  #3b82f6;
-  --blue-600:  #2563eb;
-  --blue-50:   #eff6ff;
-  --radius: 8px;
-}
-
 html, body, #app {
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  font-size: 14px;
-  color: var(--slate-900);
-  background: var(--slate-100);
   -webkit-font-smoothing: antialiased;
 }
 
-/* 整体布局 */
-.app { display: flex; height: 100vh; overflow: hidden; }
-
-.right-panel {
-  flex: 1;
-  display: flex; flex-direction: column;
-  overflow: hidden;
-}
-
-/* 侧边栏 */
-.sidebar {
-  width: 312px; min-width: 312px;
-  background: #fff;
-  border-right: 1px solid var(--slate-200);
-  display: flex; flex-direction: column; gap: 6px;
-  overflow-y: auto;
-  padding: 0 16px 0;
-  z-index: 10;
-}
-
-.sidebar-header {
-  position: sticky; top: 0; z-index: 2;
-  display: flex; align-items: center; gap: 10px;
-  margin: 0 -16px;
-  padding: 14px 20px;
-  background: #fff;
-  border-bottom: 1px solid var(--slate-200);
-  text-decoration: none; cursor: pointer;
-  transition: background 0.15s;
-}
-.sidebar-header:hover { background: var(--slate-50); }
-.sidebar-header svg { color: #24292f; flex-shrink: 0; }
-
-.logo-text-wrap {
-  position: relative;
-  font-size: 16px; font-weight: 700;
-  letter-spacing: -0.2px;
-  white-space: nowrap;
-  color: var(--slate-900);
-}
-
+/* 标题悬停动画 */
 .logo-text-default, .logo-text-hover {
   transition: opacity 0.35s ease, filter 0.35s ease;
   white-space: nowrap;
 }
-
 .logo-text-default {
   opacity: 1;
   filter: blur(0);
 }
-
 .logo-text-hover {
   position: absolute;
   left: 0; top: 0;
   opacity: 0;
   filter: blur(8px);
 }
-
 .sidebar-header:hover .logo-text-default {
   opacity: 0;
   filter: blur(8px);
 }
-
 .sidebar-header:hover .logo-text-hover {
   opacity: 1;
   filter: blur(0);
 }
 
-/* 设置面板 */
-.panel {
-  background: var(--slate-50);
-  border: 1px solid var(--slate-200);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  display: flex; flex-direction: column;
-  position: relative;
-}
-.panel > * + * { margin-top: 8px; }
-
-.panel-label {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12.5px; font-weight: 600; color: var(--slate-700);
-  letter-spacing: 0.3px;
-}
-.panel-label svg { color: var(--slate-400); flex-shrink: 0; }
-
-.val { font-weight: 500; color: var(--blue-600); margin-left: auto; font-size: 12px; }
-
-.badge {
-  margin-left: auto;
-  background: var(--blue-600); color: #fff;
-  font-size: 11px; font-weight: 600;
-  padding: 1px 7px; border-radius: 10px;
-  min-width: 20px; text-align: center;
-}
-
-.hint { font-size: 11.5px; color: var(--slate-400); line-height: 1.4; }
-
-/* 名字输入框 */
-.name-input {
-  width: 100%; padding: 10px 12px;
-  border: 1px solid var(--slate-200); border-radius: 6px;
-  font-size: 13.5px; font-family: inherit; line-height: 1.6;
-  resize: vertical; background: #fff; white-space: pre-wrap;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
+/* 名字输入框焦点样式 */
 .name-input:focus {
-  outline: none; border-color: var(--blue-500);
+  outline: none;
+  border-color: var(--color-blue-500);
   box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
 }
-.name-input::placeholder { color: var(--slate-300); }
 
-/* 按钮组 */
-.btn-group { display: flex; gap: 1px; background: var(--slate-200); border-radius: 6px; padding: 2px; }
-.btn-group button {
-  flex: 1; padding: 6px 0;
-  border: none; background: transparent; border-radius: 5px;
-  font-size: 13px; font-weight: 500; cursor: pointer; color: var(--slate-500);
-  transition: all 0.15s;
-}
-.btn-group button:hover:not(.active) { color: var(--slate-700); background: rgba(255,255,255,0.5); }
-.btn-group button.active {
-  background: #fff; color: var(--slate-900); font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-
-/* 滑块 */
-.slider-row { display: flex; align-items: center; gap: 8px; }
-.slider-end { font-size: 11px; color: var(--slate-400); font-weight: 500; flex-shrink: 0; }
-input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
-
-/* 字体设置 */
-.font-grid { display: flex; gap: 8px; align-items: flex-end; }
-.font-item { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.font-item-label { font-size: 11px; color: var(--slate-400); font-weight: 500; }
-
-.select {
-  padding: 5px 6px; border: 1px solid var(--slate-200);
-  border-radius: 5px; font-size: 12px; font-family: inherit;
-  color: var(--slate-700); background: #fff; cursor: pointer;
-  height: 30px; box-sizing: border-box;
-}
-.select:focus { outline: none; border-color: var(--blue-500); }
-
-.auto-badge {
-  font-size: 11.5px; color: var(--slate-500); margin-top: 2px;
-}
-.auto-badge strong { color: var(--blue-600); }
-
-/* 打印按钮 */
-.print-sticky {
-  position: sticky; bottom: 0; background: #fff;
-  margin-top: auto;
-  padding: 12px 16px 16px; margin-left: -16px; margin-right: -16px;
-  border-top: 1px solid var(--slate-200);
-}
-
-.print-btn {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; padding: 12px;
-  background: var(--blue-600); color: #fff;
-  border: none; border-radius: var(--radius);
-  font-size: 15px; font-weight: 600; cursor: pointer;
-  transition: all 0.15s; font-family: inherit;
-}
-.print-btn:hover:not(:disabled) {
-  background: #1d4ed8; transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37,99,235,0.35);
-}
-.print-btn:active:not(:disabled) { transform: translateY(0); }
-.print-btn:disabled { background: var(--slate-200); color: var(--slate-400); cursor: not-allowed; box-shadow: none; }
-
-/* 顶部工具栏 */
-.col-bar {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 20px;
-  background: #fff;
-  border-bottom: 1px solid var(--slate-200);
-  flex-shrink: 0;
-}
-
-.col-bar-label {
-  font-size: 13px; font-weight: 600; color: var(--slate-700);
-  white-space: nowrap;
-}
-
-.col-bar .btn-group button { padding: 5px 16px; }
-
-.col-bar-spacer { flex: 1; }
-
-.toggle-3d {
-  display: flex; align-items: center; gap: 8px;
-  cursor: pointer; user-select: none;
-  font-size: 13px; font-weight: 500; color: var(--slate-700);
-  white-space: nowrap;
-}
-
-/* 展开 / 折叠由 JS 钩子函数控制过渡 */
-
-/* 可点击的面板标题 */
-.panel-label-clickable {
-  cursor: pointer;
-  transition: background 0.15s;
-  border-radius: 6px;
-  padding: 3px 6px;
-  margin: -3px -6px;
-}
-.panel-label-clickable:hover {
-  background: var(--slate-200);
-}
-
-/* 切换行（如字体自动撑满开关） */
-.toggle-row {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-  padding: 2px 0;
-}
-.toggle-row .toggle-label-text {
-  flex: 1;
-  font-size: 13px;
-  color: var(--slate-700);
-  font-weight: 500;
-}
-
-/* 预览区 */
-.preview {
-  flex: 1;
-  overflow: auto;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  background: radial-gradient(circle, #d4d4d8 1px, transparent 1px);
-  background-size: 20px 20px;
-  background-color: #e8eaed;
-}
-
-.empty-state {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  margin-top: 18vh; gap: 10px; text-align: center;
-}
-.empty-icon { margin-bottom: 8px; opacity: 0.6; }
-.empty-title { font-size: 16px; font-weight: 600; color: var(--slate-500); }
-.empty-desc { font-size: 13px; color: var(--slate-400); }
-
-.cards-grid { display: grid; align-content: start; }
-
-.card {
-  display: flex; flex-direction: column;
-  aspect-ratio: 1 / 1;
-  width: 100%;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08);
-  border-radius: 2px;
-  transition: box-shadow 0.2s;
-}
-.card.has-base {
-  aspect-ratio: 2 / 3;
-}
-.card:hover { box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.12); }
-
+/* 容器查询 */
 .half {
-  flex: 1;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden; padding: 3mm;
-  position: relative;
   container-type: size;
 }
-
-.half-top { transform: rotate(180deg); }
-
 .half-base {
   container-type: unset;
 }
-
-.divider {
-  height: 0; flex-shrink: 0;
-  margin: 0 8%;
-  border-top: 1px dashed #d0d0d0;
-}
-
 .name {
-  white-space: pre; line-height: 1; text-align: center;
   font-size: calc(1cqh * var(--font-pct, 70));
   -webkit-text-stroke-color: var(--stroke-color, transparent);
   -webkit-text-stroke-width: calc(1cqh * var(--stroke-pct, 0));
   paint-order: stroke fill;
 }
 
-/* 分屏预览布局 */
-.preview-split {
-  flex-direction: row;
-  align-items: stretch;
-}
-
-.preview-left {
-  flex: 1;
-  overflow: auto;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  background: radial-gradient(circle, #d4d4d8 1px, transparent 1px);
-  background-size: 20px 20px;
-  background-color: #e8eaed;
-}
-
-.preview-right {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle, #d4d4d8 1px, transparent 1px);
-  background-size: 20px 20px;
-  background-color: #e8eaed;
-  border-left: 1px solid var(--slate-200);
-  cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-  position: relative;
-}
-.preview-right:active { cursor: grabbing; }
-
-.preview-3d-full {
-  flex: 1;
-  align-self: stretch;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle, #d4d4d8 1px, transparent 1px);
-  background-size: 20px 20px;
-  background-color: #e8eaed;
-  cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-  position: relative;
-}
-.preview-3d-full:active { cursor: grabbing; }
-
 /* 3D 立牌 */
-
-/* 3D 场景与舞台 */
 .standee-scene {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   perspective: 900px;
   perspective-origin: 50% 40%;
 }
-
 .standee-cam {
   transform-style: preserve-3d;
   transition: transform 0.3s ease-out;
 }
-
 .standee-stage {
   transform-style: preserve-3d;
   transition: transform 0.3s ease-out;
@@ -974,16 +690,12 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 .standee-stage.dragging {
   transition: none;
 }
-
-/* 模型容器 */
 .standee {
   position: relative;
   transform-style: preserve-3d;
   width: var(--leaf-w);
   height: var(--tri-h);
 }
-
-/* 叶片（三角形的两个斜面） */
 .leaf {
   position: absolute;
   left: 0; top: 0;
@@ -991,26 +703,18 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   height: var(--leaf-h);
   transform-style: preserve-3d;
 }
-
-/* 前叶片：向观察者倾斜 30° */
 .leaf-front {
   transform-origin: 50% 0%;
   transform: rotateX(30deg);
 }
-
-/* 后叶片：远离观察者倾斜 -30°，两叶片夹角 30° + 30° = 60° = 等边三角形内角 */
 .leaf-back {
   transform-origin: 50% 0%;
   transform: rotateX(-30deg);
 }
-
-/* 底板：水平连接前后叶片底部 */
 .leaf-base {
   transform-origin: 50% 0%;
   transform: translateY(var(--tri-h)) translateZ(var(--half-z)) rotateX(-90deg);
 }
-
-/* 叶片正反面 */
 .leaf-face {
   position: absolute;
   border: #eee 1px solid;
@@ -1022,32 +726,26 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   justify-content: center;
   overflow: hidden;
 }
-
-/* 反面：rotateY(180deg) 翻转到另一侧 */
 .leaf-face-back {
   transform: rotateY(180deg);
 }
-
-/* 内侧为纯白 */
 .leaf-face-white {
   background: #fff;
 }
 
-/* 光照渐变（伪元素模拟立体光影） */
+/* 光照渐变 */
 .leaf-front .leaf-face-front::after {
   content: '';
   position: absolute; inset: 0;
   background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 55%);
   pointer-events: none;
 }
-
 .leaf-back .leaf-face-back::after {
   content: '';
   position: absolute; inset: 0;
   background: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, transparent 65%);
   pointer-events: none;
 }
-
 .leaf-base .leaf-face-front::after {
   content: '';
   position: absolute; inset: 0;
@@ -1055,7 +753,6 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   pointer-events: none;
 }
 
-/* 名字文字 */
 .standee-name {
   white-space: pre;
   line-height: 1;
@@ -1063,8 +760,6 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   pointer-events: none;
   paint-order: stroke fill;
 }
-
-/* 地面阴影 */
 .standee-shadow {
   width: 70%;
   max-width: 260px;
@@ -1075,39 +770,8 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   pointer-events: none;
 }
 
-/* 操作提示文字 */
-.standee-hint {
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--slate-400);
-  pointer-events: none;
-}
-
-/* 回正按钮 */
-.reset-3d-btn {
-  position: absolute;
-  top: 10px; right: 10px;
-  display: flex; align-items: center; gap: 4px;
-  padding: 5px 10px;
-  border: 1px solid var(--slate-200);
-  border-radius: 6px;
-  background: #fff;
-  color: var(--slate-600);
-  font-size: 12px; font-family: inherit;
-  cursor: pointer; z-index: 5;
-  transition: all 0.15s;
-}
-.reset-3d-btn:hover {
-  background: var(--slate-50);
-  border-color: var(--slate-300);
-  color: var(--slate-900);
-}
-.reset-3d-btn svg { flex-shrink: 0; }
-
 /* 打印样式 */
 @media print {
-  @page { size: A4; margin: 0; }
-
   html, body, #app {
     height: auto !important; background: #fff !important;
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
@@ -1120,7 +784,8 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 
   .no-print { display: none !important; }
   .divider { display: none !important; }
-  .preview-right, .preview-3d-full, .standee-hint { display: none !important; }
+
+  #__vue-devtools-container__ { display: none !important; }
 
   .preview {
     overflow: visible !important; padding: 0 !important; margin: 0 !important;
@@ -1137,7 +802,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
     aspect-ratio: auto !important;
     width: var(--print-w) !important; height: var(--print-h) !important;
     box-shadow: none !important; border-radius: 0 !important;
-    margin: 4mm auto !important;
+    margin: 0 auto !important;
     break-before: page !important; page-break-before: always !important;
     break-inside: avoid !important; page-break-inside: avoid !important;
   }
