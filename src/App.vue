@@ -9,6 +9,8 @@ const bgColor = ref('#ffffff')
 const fontColor = ref('#1a1a1a')
 const fontPct = ref(70)
 const fontWeight = ref(700)
+const strokeColor = ref('#000000')
+const strokeWidth = ref(0)
 const autoFill = ref(true)
 const bgImage = ref(null)
 const imageInput = ref(null)
@@ -74,6 +76,8 @@ const halfStyle = computed(() => {
     fontWeight: fontWeight.value,
     color: fontColor.value,
     fontFamily: '"KaiTi", "STKaiti", "楷体", "KaiTi SC", "AR PL UKai CN", serif',
+    WebkitTextStrokeColor: strokeColor.value,
+    WebkitTextStrokeWidth: `${strokeWidth.value}px`,
   }
   if (bgImage.value) {
     s.backgroundImage = `url(${bgImage.value})`
@@ -203,6 +207,8 @@ const leaf3DContent = computed(() => {
     fontWeight: fontWeight.value,
     fontFamily: '"KaiTi", "STKaiti", "楷体", "KaiTi SC", "AR PL UKai CN", serif',
     fontSize: fontSize3D.value,
+    WebkitTextStrokeColor: strokeColor.value,
+    WebkitTextStrokeWidth: `${strokeWidth.value}px`,
   }
   if (bgImage.value) {
     s.backgroundImage = `url(${bgImage.value})`
@@ -436,6 +442,20 @@ function onSlideLeave(el, done) {
               <option :value="700">Bold</option>
               <option :value="900">Black</option>
             </select>
+          </div>
+        </div>
+        <div class="font-grid" style="margin-top:8px">
+          <div class="font-item">
+            <span class="font-item-label">描边颜色</span>
+            <input type="color" v-model="strokeColor" class="color-input small" />
+          </div>
+          <div class="font-item">
+            <span class="font-item-label">描边粗细 {{ strokeWidth }}px</span>
+            <div class="slider-row">
+              <span class="slider-end">0</span>
+              <input type="range" v-model.number="strokeWidth" min="0" max="8" step="0.5" />
+              <span class="slider-end">8</span>
+            </div>
           </div>
         </div>
         <div class="toggle-row" @click="autoFill = !autoFill">
@@ -1059,6 +1079,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 .name {
   white-space: pre; line-height: 1; text-align: center;
   font-size: calc(1cqh * var(--font-pct, 70));
+  paint-order: stroke fill;
 }
 
 /* ============================================================
@@ -1231,6 +1252,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   line-height: 1;
   text-align: center;
   pointer-events: none;
+  paint-order: stroke fill;
 }
 
 /* ---- Shadow ---- */
