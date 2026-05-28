@@ -1,5 +1,16 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
+
+// ---- types ----
+interface DragStart {
+  x: number
+  y: number
+  rx: number
+  ry: number
+}
+
+type StyleMap = Record<string, string>
+type CardStyleMap = Record<string, string | number>
 
 // ---- state ----
 const namesText = ref('张三\n李 四\n王老五')
@@ -12,14 +23,14 @@ const fontWeight = ref(700)
 const strokeColor = ref('#000000')
 const strokePct = ref(0)
 const autoFill = ref(true)
-const bgImage = ref(null)
-const imageInput = ref(null)
+const bgImage = ref<string | null>(null)
+const imageInput = ref<HTMLInputElement | null>(null)
 
 // ---- third panel (base) ----
 const showBase = ref(false)
 const baseBgColor = ref('#ffffff')
-const baseBgImage = ref(null)
-const baseImageInput = ref(null)
+const baseBgImage = ref<string | null>(null)
+const baseImageInput = ref<HTMLInputElement | null>(null)
 
 // ---- 3D standee ----
 const show3D = ref(false)
@@ -27,7 +38,7 @@ const rotateX3D = ref(-25)
 const rotateY3D = ref(35)
 const zoom3D = ref(0)
 const isDragging3D = ref(false)
-const dragStart3D = ref({ x: 0, y: 0, rx: 0, ry: 0 })
+const dragStart3D = ref<DragStart>({ x: 0, y: 0, rx: 0, ry: 0 })
 
 // ---- derived ----
 const names = computed(() =>
@@ -37,7 +48,7 @@ const names = computed(() =>
     .filter(Boolean)
 )
 
-function displayName(name) {
+function displayName(name: string): string {
   const escaped = name
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -68,7 +79,7 @@ const printStrokeWidth = computed(() => {
   return `${(halfH * strokePct.value / 100).toFixed(2)}mm`
 })
 
-const cardStyle = computed(() => ({
+const cardStyle = computed<CardStyleMap>(() => ({
   backgroundColor: bgColor.value,
   '--font-pct': fontPctEffective.value,
   '--stroke-pct': strokePct.value,
@@ -79,9 +90,9 @@ const cardStyle = computed(() => ({
   '--print-sw': printStrokeWidth.value,
 }))
 
-const halfStyle = computed(() => {
-  const s = {
-    fontWeight: fontWeight.value,
+const halfStyle = computed<StyleMap>(() => {
+  const s: StyleMap = {
+    fontWeight: String(fontWeight.value),
     color: fontColor.value,
     fontFamily: '"KaiTi", "STKaiti", "楷体", "KaiTi SC", "AR PL UKai CN", serif',
   }
@@ -93,8 +104,8 @@ const halfStyle = computed(() => {
   return s
 })
 
-const baseStyle = computed(() => {
-  const s = {
+const baseStyle = computed<StyleMap>(() => {
+  const s: StyleMap = {
     backgroundColor: baseBgColor.value,
   }
   if (baseBgImage.value) {
@@ -105,7 +116,7 @@ const baseStyle = computed(() => {
   return s
 })
 
-const gridStyle = computed(() => ({
+const gridStyle = computed<StyleMap>(() => ({
   gridTemplateColumns: `repeat(${columns.value}, minmax(0, 1fr))`,
   gap: '24px',
   padding: '28px',
@@ -114,89 +125,91 @@ const gridStyle = computed(() => ({
 }))
 
 // ---- image upload ----
-function triggerUpload() { imageInput.value?.click() }
+function triggerUpload(): void { imageInput.value?.click() }
 
-function handleImageUpload(e) {
-  const file = e.target.files?.[0]
+function handleImageUpload(e: Event): void {
+  const input = e.target as HTMLInputElement | null
+  const file = input?.files?.[0]
   if (!file) return
   const reader = new FileReader()
   reader.onload = (ev) => {
     const img = new Image()
     img.onload = () => cropTo21(img)
-    img.src = ev.target.result
+    img.src = ev.target?.result as string
   }
   reader.readAsDataURL(file)
-  e.target.value = ''
+  input.value = ''
 }
 
-function cropTo21(img) {
+function cropTo21(img: HTMLImageElement): void {
   const canvas = document.createElement('canvas')
   canvas.width = 800
   canvas.height = 400
   const srcW = img.naturalWidth
   const srcH = img.naturalHeight
   const srcRatio = srcW / srcH
-  let sx, sy, sw, sh
+  let sx: number, sy: number, sw: number, sh: number
   if (srcRatio > 2) {
     sw = srcH * 2; sh = srcH; sx = (srcW - sw) / 2; sy = 0
   } else {
     sw = srcW; sh = srcW / 2; sx = 0; sy = (srcH - sh) / 2
   }
-  canvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, 800, 400)
+  canvas.getContext('2d')!.drawImage(img, sx, sy, sw, sh, 0, 0, 800, 400)
   bgImage.value = canvas.toDataURL('image/jpeg', 0.9)
 }
 
-function removeBgImage() { bgImage.value = null }
-function doPrint() { window.print() }
+function removeBgImage(): void { bgImage.value = null }
+function doPrint(): void { window.print() }
 
 // ---- base panel image upload ----
-function triggerBaseUpload() { baseImageInput.value?.click() }
+function triggerBaseUpload(): void { baseImageInput.value?.click() }
 
-function handleBaseImageUpload(e) {
-  const file = e.target.files?.[0]
+function handleBaseImageUpload(e: Event): void {
+  const input = e.target as HTMLInputElement | null
+  const file = input?.files?.[0]
   if (!file) return
   const reader = new FileReader()
   reader.onload = (ev) => {
     const img = new Image()
     img.onload = () => cropBaseImage(img)
-    img.src = ev.target.result
+    img.src = ev.target?.result as string
   }
   reader.readAsDataURL(file)
-  e.target.value = ''
+  input.value = ''
 }
 
-function cropBaseImage(img) {
+function cropBaseImage(img: HTMLImageElement): void {
   const canvas = document.createElement('canvas')
   canvas.width = 800
   canvas.height = 400
   const srcW = img.naturalWidth
   const srcH = img.naturalHeight
   const srcRatio = srcW / srcH
-  let sx, sy, sw, sh
+  let sx: number, sy: number, sw: number, sh: number
   if (srcRatio > 2) {
     sw = srcH * 2; sh = srcH; sx = (srcW - sw) / 2; sy = 0
   } else {
     sw = srcW; sh = srcW / 2; sx = 0; sy = (srcH - sh) / 2
   }
-  canvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, 800, 400)
+  canvas.getContext('2d')!.drawImage(img, sx, sy, sw, sh, 0, 0, 800, 400)
   baseBgImage.value = canvas.toDataURL('image/jpeg', 0.9)
 }
 
-function removeBaseBgImage() { baseBgImage.value = null }
+function removeBaseBgImage(): void { baseBgImage.value = null }
 
 // ---- 3D standee computed ----
 const displayName3D = computed(() => {
-  return names.value.length > 0 ? names.value[0] : '名字'
+  return names.value.length > 0 ? names.value[0]! : '名字'
 })
 
 // Pixel geometry -- fixed size, independent of cardSize
-  const LEAF_BASE = 120
+const LEAF_BASE = 120
 const leafW = computed(() => LEAF_BASE * 1.6)
 const leafH = computed(() => LEAF_BASE * 0.8)
 const triH = computed(() => leafH.value * Math.cos(Math.PI / 6))
 const halfZ = computed(() => leafH.value * Math.sin(Math.PI / 6))
 
-const standeeVars = computed(() => ({
+const standeeVars = computed<StyleMap>(() => ({
   '--leaf-w': leafW.value + 'px',
   '--leaf-h': leafH.value + 'px',
   '--tri-h': triH.value.toFixed(1) + 'px',
@@ -211,11 +224,11 @@ const strokeWidth3D = computed(() => {
   return (leafH.value * strokePct.value / 100).toFixed(1) + 'px'
 })
 
-const leaf3DContent = computed(() => {
-  const s = {
+const leaf3DContent = computed<StyleMap>(() => {
+  const s: StyleMap = {
     backgroundColor: bgColor.value,
     color: fontColor.value,
-    fontWeight: fontWeight.value,
+    fontWeight: String(fontWeight.value),
     fontFamily: '"KaiTi", "STKaiti", "楷体", "KaiTi SC", "AR PL UKai CN", serif',
     fontSize: fontSize3D.value,
     WebkitTextStrokeColor: strokeColor.value,
@@ -229,8 +242,8 @@ const leaf3DContent = computed(() => {
   return s
 })
 
-const base3DContent = computed(() => {
-  const s = { backgroundColor: baseBgColor.value }
+const base3DContent = computed<StyleMap>(() => {
+  const s: StyleMap = { backgroundColor: baseBgColor.value }
   if (baseBgImage.value) {
     s.backgroundImage = `url(${baseBgImage.value})`
     s.backgroundSize = '100% 100%'
@@ -239,87 +252,91 @@ const base3DContent = computed(() => {
   return s
 })
 
-const camStyle = computed(() => ({
+const camStyle = computed<StyleMap>(() => ({
   transform: `translateZ(${zoom3D.value}px)`,
 }))
 
-const stage3DStyle = computed(() => ({
+const stage3DStyle = computed<StyleMap>(() => ({
   transform: `rotateX(${rotateX3D.value}deg) rotateY(${rotateY3D.value}deg)`,
 }))
 
 // ---- 3D event handlers ----
-function pointerDown3D(e) {
+function pointerDown3D(e: MouseEvent | TouchEvent): void {
   isDragging3D.value = true
-  const pt = e.touches ? e.touches[0] : e
+  const pt = 'touches' in e ? e.touches[0]! : e
   dragStart3D.value = { x: pt.clientX, y: pt.clientY, rx: rotateX3D.value, ry: rotateY3D.value }
 }
 
-function pointerMove3D(e) {
+function pointerMove3D(e: MouseEvent | TouchEvent): void {
   if (!isDragging3D.value) return
-  const pt = e.touches ? e.touches[0] : e
+  const pt = 'touches' in e ? e.touches[0] : e
   if (!pt) return
   rotateY3D.value = dragStart3D.value.ry + (pt.clientX - dragStart3D.value.x) * 0.4
   rotateX3D.value = dragStart3D.value.rx - (pt.clientY - dragStart3D.value.y) * 0.4
 }
 
-function pointerUp3D() {
+function pointerUp3D(): void {
   isDragging3D.value = false
 }
 
-function onWheel3D(e) {
+function onWheel3D(e: WheelEvent): void {
   e.preventDefault()
   zoom3D.value = Math.max(-600, Math.min(600, zoom3D.value - e.deltaY * 0.5))
 }
 
-function reset3DView() {
+function reset3DView(): void {
   rotateX3D.value = -25
   rotateY3D.value = 35
   zoom3D.value = 0
 }
 
 // ---- expand/collapse transition hooks ----
-function onSlideBeforeEnter(el) {
-  el.style.height = '0'
-  el.style.opacity = '0'
-  el.style.overflow = 'hidden'
+function onSlideBeforeEnter(el: Element): void {
+  const htmlEl = el as HTMLElement
+  htmlEl.style.height = '0'
+  htmlEl.style.opacity = '0'
+  htmlEl.style.overflow = 'hidden'
 }
 
-function onSlideEnter(el, done) {
-  el.style.transition = 'height 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.35s ease 0.08s'
-  el.offsetHeight // force reflow
-  el.style.height = el.scrollHeight + 'px'
-  el.style.opacity = '1'
-  const onEnd = (e) => {
-    if (e.target !== el) return
-    el.removeEventListener('transitionend', onEnd)
-    el.style.height = 'auto'
-    el.style.overflow = ''
-    el.style.transition = ''
-    el.style.opacity = ''
+function onSlideEnter(el: Element, done: () => void): void {
+  const htmlEl = el as HTMLElement
+  htmlEl.style.transition = 'height 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.35s ease 0.08s'
+  void htmlEl.offsetHeight // force reflow
+  htmlEl.style.height = htmlEl.scrollHeight + 'px'
+  htmlEl.style.opacity = '1'
+  const onEnd = (e: TransitionEvent) => {
+    if (e.target !== htmlEl) return
+    htmlEl.removeEventListener('transitionend', onEnd)
+    htmlEl.style.height = 'auto'
+    htmlEl.style.overflow = ''
+    htmlEl.style.transition = ''
+    htmlEl.style.opacity = ''
     done()
   }
-  el.addEventListener('transitionend', onEnd)
+  htmlEl.addEventListener('transitionend', onEnd)
 }
 
-function onSlideBeforeLeave(el) {
-  el.style.height = el.offsetHeight + 'px'
-  el.style.overflow = 'hidden'
-  el.offsetHeight // force reflow to commit the explicit height
+function onSlideBeforeLeave(el: Element): void {
+  const htmlEl = el as HTMLElement
+  htmlEl.style.height = htmlEl.offsetHeight + 'px'
+  htmlEl.style.overflow = 'hidden'
+  void htmlEl.offsetHeight // force reflow to commit the explicit height
 }
 
-function onSlideLeave(el, done) {
-  el.style.transition = 'height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.22s ease, margin-top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), padding-top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-  el.offsetHeight // force reflow
-  el.style.height = '0'
-  el.style.opacity = '0'
-  el.style.marginTop = '0'
-  el.style.paddingTop = '0'
-  const onEnd = (e) => {
-    if (e.target !== el) return
-    el.removeEventListener('transitionend', onEnd)
+function onSlideLeave(el: Element, done: () => void): void {
+  const htmlEl = el as HTMLElement
+  htmlEl.style.transition = 'height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.22s ease, margin-top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), padding-top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+  void htmlEl.offsetHeight // force reflow
+  htmlEl.style.height = '0'
+  htmlEl.style.opacity = '0'
+  htmlEl.style.marginTop = '0'
+  htmlEl.style.paddingTop = '0'
+  const onEnd = (e: TransitionEvent) => {
+    if (e.target !== htmlEl) return
+    htmlEl.removeEventListener('transitionend', onEnd)
     done()
   }
-  el.addEventListener('transitionend', onEnd)
+  htmlEl.addEventListener('transitionend', onEnd)
 }
 </script>
 
