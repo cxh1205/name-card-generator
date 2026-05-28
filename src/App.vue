@@ -1116,6 +1116,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 
 .standee-cam {
   transform-style: preserve-3d;
+  transition: transform 0.3s ease-out;
 }
 
 .standee-stage {
