@@ -23,7 +23,7 @@ const baseImageInput = ref(null)
 const show3D = ref(false)
 const rotateX3D = ref(-25)
 const rotateY3D = ref(35)
-const zoom3D = ref(1)
+const zoom3D = ref(0)
 const isDragging3D = ref(false)
 const dragStart3D = ref({ x: 0, y: 0, rx: 0, ry: 0 })
 
@@ -222,8 +222,12 @@ const base3DContent = computed(() => {
   return s
 })
 
+const camStyle = computed(() => ({
+  transform: `translateZ(${zoom3D.value}px)`,
+}))
+
 const stage3DStyle = computed(() => ({
-  transform: `rotateX(${rotateX3D.value}deg) rotateY(${rotateY3D.value}deg) scale(${zoom3D.value})`,
+  transform: `rotateX(${rotateX3D.value}deg) rotateY(${rotateY3D.value}deg)`,
 }))
 
 // ---- 3D event handlers ----
@@ -247,13 +251,13 @@ function pointerUp3D() {
 
 function onWheel3D(e) {
   e.preventDefault()
-  zoom3D.value = Math.max(0.3, Math.min(4, zoom3D.value - e.deltaY * 0.002))
+  zoom3D.value = Math.max(-600, Math.min(600, zoom3D.value - e.deltaY * 0.5))
 }
 
 function reset3DView() {
   rotateX3D.value = -25
   rotateY3D.value = 35
-  zoom3D.value = 1
+  zoom3D.value = 0
 }
 </script>
 
@@ -483,8 +487,9 @@ function reset3DView() {
               回正
             </button>
             <div class="standee-scene">
-              <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
-                <div class="standee" :style="standeeVars">
+              <div class="standee-cam" :style="camStyle">
+                <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
+                  <div class="standee" :style="standeeVars">
                   <!-- Front leaf = half-bottom: content on element front, white on element back -->
                   <div class="leaf leaf-front">
                     <div class="leaf-face leaf-face-front" :style="leaf3DContent">
@@ -505,6 +510,7 @@ function reset3DView() {
                     <div class="leaf-face leaf-face-back leaf-face-white"></div>
                   </div>
                 </div>
+              </div>
               </div>
               <div class="standee-shadow"></div>
             </div>
@@ -527,23 +533,25 @@ function reset3DView() {
             回正
           </button>
           <div class="standee-scene">
-            <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
-              <div class="standee" :style="standeeVars">
-                <div class="leaf leaf-front">
-                  <div class="leaf-face leaf-face-front" :style="leaf3DContent">
-                    <span class="standee-name" v-html="displayName(displayName3D)"></span>
+            <div class="standee-cam" :style="camStyle">
+              <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
+                <div class="standee" :style="standeeVars">
+                  <div class="leaf leaf-front">
+                    <div class="leaf-face leaf-face-front" :style="leaf3DContent">
+                      <span class="standee-name" v-html="displayName(displayName3D)"></span>
+                    </div>
+                    <div class="leaf-face leaf-face-back leaf-face-white"></div>
                   </div>
-                  <div class="leaf-face leaf-face-back leaf-face-white"></div>
-                </div>
-                <div class="leaf leaf-back">
-                  <div class="leaf-face leaf-face-front leaf-face-white"></div>
-                  <div class="leaf-face leaf-face-back" :style="leaf3DContent">
-                    <span class="standee-name" v-html="displayName(displayName3D)"></span>
+                  <div class="leaf leaf-back">
+                    <div class="leaf-face leaf-face-front leaf-face-white"></div>
+                    <div class="leaf-face leaf-face-back" :style="leaf3DContent">
+                      <span class="standee-name" v-html="displayName(displayName3D)"></span>
+                    </div>
                   </div>
-                </div>
-                <div v-if="showBase" class="leaf leaf-base">
-                  <div class="leaf-face leaf-face-front" :style="base3DContent"></div>
-                  <div class="leaf-face leaf-face-back leaf-face-white"></div>
+                  <div v-if="showBase" class="leaf leaf-base">
+                    <div class="leaf-face leaf-face-front" :style="base3DContent"></div>
+                    <div class="leaf-face leaf-face-back leaf-face-white"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -997,6 +1005,10 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   perspective-origin: 50% 40%;
 }
 
+.standee-cam {
+  transform-style: preserve-3d;
+}
+
 .standee-stage {
   transform-style: preserve-3d;
   transition: transform 0.3s ease-out;
@@ -1045,6 +1057,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 /* ---- Leaf faces (two sides of each leaf) ---- */
 .leaf-face {
   position: absolute;
+  border: #eee 1px solid;
   inset: 0;
   backface-visibility: hidden;
   border-radius: 2px;
