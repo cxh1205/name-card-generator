@@ -259,6 +259,51 @@ function reset3DView() {
   rotateY3D.value = 35
   zoom3D.value = 0
 }
+
+// ---- expand/collapse transition hooks ----
+function onSlideBeforeEnter(el) {
+  el.style.height = '0'
+  el.style.opacity = '0'
+  el.style.overflow = 'hidden'
+}
+
+function onSlideEnter(el, done) {
+  el.style.transition = 'height 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.35s ease 0.08s'
+  el.offsetHeight // force reflow
+  el.style.height = el.scrollHeight + 'px'
+  el.style.opacity = '1'
+  const onEnd = (e) => {
+    if (e.target !== el) return
+    el.removeEventListener('transitionend', onEnd)
+    el.style.height = 'auto'
+    el.style.overflow = ''
+    el.style.transition = ''
+    el.style.opacity = ''
+    done()
+  }
+  el.addEventListener('transitionend', onEnd)
+}
+
+function onSlideBeforeLeave(el) {
+  el.style.height = el.offsetHeight + 'px'
+  el.style.overflow = 'hidden'
+  el.offsetHeight // force reflow to commit the explicit height
+}
+
+function onSlideLeave(el, done) {
+  el.style.transition = 'height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.22s ease, margin-top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), padding-top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+  el.offsetHeight // force reflow
+  el.style.height = '0'
+  el.style.opacity = '0'
+  el.style.marginTop = '0'
+  el.style.paddingTop = '0'
+  const onEnd = (e) => {
+    if (e.target !== el) return
+    el.removeEventListener('transitionend', onEnd)
+    done()
+  }
+  el.addEventListener('transitionend', onEnd)
+}
 </script>
 
 <template>
@@ -341,8 +386,13 @@ function reset3DView() {
             <span class="toggle-track" :class="{ active: showBase }"><span class="toggle-thumb"></span></span>
           </span>
         </div>
-        <div class="expand-section" :class="{ expanded: showBase }">
-          <div class="expand-inner" style="padding-top:8px;display:flex;flex-direction:column;gap:8px">
+        <Transition
+          @before-enter="onSlideBeforeEnter"
+          @enter="onSlideEnter"
+          @before-leave="onSlideBeforeLeave"
+          @leave="onSlideLeave"
+        >
+          <div v-if="showBase" class="expand-inner" style="padding-top:8px;display:flex;flex-direction:column;gap:8px">
             <div class="bg-row">
               <div v-if="baseBgImage" class="img-select" @click="removeBaseBgImage">
                 <img :src="baseBgImage" class="img-thumb-lg" />
@@ -363,7 +413,7 @@ function reset3DView() {
             </div>
             <div class="hint" v-if="baseBgImage">图片已自动裁剪为 2:1 填充底部</div>
           </div>
-        </div>
+        </Transition>
       </div>
 
       <!-- Font -->
@@ -394,15 +444,20 @@ function reset3DView() {
             <span class="toggle-track" :class="{ active: autoFill }"><span class="toggle-thumb"></span></span>
           </span>
         </div>
-        <div class="expand-section" :class="{ expanded: !autoFill }">
-          <div class="expand-inner" style="padding-top:8px;display:flex;flex-direction:column;gap:4px">
+        <Transition
+          @before-enter="onSlideBeforeEnter"
+          @enter="onSlideEnter"
+          @before-leave="onSlideBeforeLeave"
+          @leave="onSlideLeave"
+        >
+          <div v-if="!autoFill" class="expand-inner" style="padding-top:8px;display:flex;flex-direction:column;gap:4px">
             <div class="slider-row">
               <span class="slider-end">10%</span>
               <input type="range" v-model.number="fontPct" min="10" max="95" step="1" />
               <span class="slider-end">95%</span>
             </div>
           </div>
-        </div>
+        </Transition>
         <span class="auto-badge">
           {{ autoFill ? '自动' : '手动' }}：字号占半卡高度的 <strong>{{ fontPctEffective }}%</strong>
         </span>
@@ -675,8 +730,10 @@ html, body, #app {
   border: 1px solid var(--slate-200);
   border-radius: var(--radius);
   padding: 12px 14px;
-  display: flex; flex-direction: column; gap: 8px;
+  display: flex; flex-direction: column;
+  position: relative;
 }
+.panel > * + * { margin-top: 8px; }
 
 .panel-label {
   display: flex; align-items: center; gap: 6px;
@@ -859,15 +916,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   transform: translateX(16px);
 }
 
-/* ---- Expand/collapse animation ---- */
-.expand-section {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.expand-section.expanded {
-  max-height: 300px;
-}
+/* ---- Expand/collapse transition — handled by JS hooks (onSlideEnter/Leave) ---- */
 
 /* ---- Clickable panel label ---- */
 .panel-label-clickable {
