@@ -10,7 +10,7 @@ const fontColor = ref('#1a1a1a')
 const fontPct = ref(70)
 const fontWeight = ref(700)
 const strokeColor = ref('#000000')
-const strokeWidth = ref(0)
+const strokePct = ref(0)
 const autoFill = ref(true)
 const bgImage = ref(null)
 const imageInput = ref(null)
@@ -63,12 +63,20 @@ const printFontSize = computed(() => {
   return `${(halfH * fontPctEffective.value / 100).toFixed(1)}mm`
 })
 
+const printStrokeWidth = computed(() => {
+  const halfH = cardSize.value / 2
+  return `${(halfH * strokePct.value / 100).toFixed(2)}mm`
+})
+
 const cardStyle = computed(() => ({
   backgroundColor: bgColor.value,
   '--font-pct': fontPctEffective.value,
+  '--stroke-pct': strokePct.value,
+  '--stroke-color': strokeColor.value,
   '--print-w': `${cardSize.value}mm`,
   '--print-h': showBase.value ? `${(cardSize.value * 1.5).toFixed(1)}mm` : `${cardSize.value}mm`,
   '--print-fs': printFontSize.value,
+  '--print-sw': printStrokeWidth.value,
 }))
 
 const halfStyle = computed(() => {
@@ -76,8 +84,6 @@ const halfStyle = computed(() => {
     fontWeight: fontWeight.value,
     color: fontColor.value,
     fontFamily: '"KaiTi", "STKaiti", "楷体", "KaiTi SC", "AR PL UKai CN", serif',
-    WebkitTextStrokeColor: strokeColor.value,
-    WebkitTextStrokeWidth: `${strokeWidth.value}px`,
   }
   if (bgImage.value) {
     s.backgroundImage = `url(${bgImage.value})`
@@ -200,6 +206,10 @@ const fontSize3D = computed(() => {
   return Math.round(leafH.value * fontPctEffective.value / 100) + 'px'
 })
 
+const strokeWidth3D = computed(() => {
+  return (leafH.value * strokePct.value / 100).toFixed(1) + 'px'
+})
+
 const leaf3DContent = computed(() => {
   const s = {
     backgroundColor: bgColor.value,
@@ -208,7 +218,7 @@ const leaf3DContent = computed(() => {
     fontFamily: '"KaiTi", "STKaiti", "楷体", "KaiTi SC", "AR PL UKai CN", serif',
     fontSize: fontSize3D.value,
     WebkitTextStrokeColor: strokeColor.value,
-    WebkitTextStrokeWidth: `${strokeWidth.value}px`,
+    WebkitTextStrokeWidth: strokeWidth3D.value,
   }
   if (bgImage.value) {
     s.backgroundImage = `url(${bgImage.value})`
@@ -450,11 +460,11 @@ function onSlideLeave(el, done) {
             <input type="color" v-model="strokeColor" class="color-input small" />
           </div>
           <div class="font-item">
-            <span class="font-item-label">描边粗细 {{ strokeWidth }}px</span>
+            <span class="font-item-label">描边粗细 {{ strokePct }}%</span>
             <div class="slider-row">
               <span class="slider-end">0</span>
-              <input type="range" v-model.number="strokeWidth" min="0" max="8" step="0.5" />
-              <span class="slider-end">8</span>
+              <input type="range" v-model.number="strokePct" min="0" max="8" step="0.5" />
+              <span class="slider-end">8%</span>
             </div>
           </div>
         </div>
@@ -1079,6 +1089,8 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 .name {
   white-space: pre; line-height: 1; text-align: center;
   font-size: calc(1cqh * var(--font-pct, 70));
+  -webkit-text-stroke-color: var(--stroke-color, transparent);
+  -webkit-text-stroke-width: calc(1cqh * var(--stroke-pct, 0));
   paint-order: stroke fill;
 }
 
@@ -1339,6 +1351,6 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 
   .half { container-type: unset !important; }
   .half-base { container-type: unset !important; }
-  .name { font-size: var(--print-fs) !important; }
+  .name { font-size: var(--print-fs) !important; -webkit-text-stroke-width: var(--print-sw) !important; }
 }
 </style>
