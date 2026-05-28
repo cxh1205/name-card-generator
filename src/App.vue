@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-// ---- types ----
+// 类型定义
 interface DragStart {
   x: number
   y: number
@@ -12,7 +12,7 @@ interface DragStart {
 type StyleMap = Record<string, string>
 type CardStyleMap = Record<string, string | number>
 
-// ---- state ----
+// 响应式状态
 const namesText = ref('张三\n李 四\n王老五')
 const cardSize = ref(120)
 const columns = ref(1)
@@ -26,13 +26,13 @@ const autoFill = ref(true)
 const bgImage = ref<string | null>(null)
 const imageInput = ref<HTMLInputElement | null>(null)
 
-// ---- third panel (base) ----
+// 第三联（底部面板）
 const showBase = ref(false)
 const baseBgColor = ref('#ffffff')
 const baseBgImage = ref<string | null>(null)
 const baseImageInput = ref<HTMLInputElement | null>(null)
 
-// ---- 3D standee ----
+// 3D 立牌
 const show3D = ref(false)
 const rotateX3D = ref(-25)
 const rotateY3D = ref(35)
@@ -40,7 +40,7 @@ const zoom3D = ref(0)
 const isDragging3D = ref(false)
 const dragStart3D = ref<DragStart>({ x: 0, y: 0, rx: 0, ry: 0 })
 
-// ---- derived ----
+// 派生计算
 const names = computed(() =>
   namesText.value
     .split(/[\n,，、]+/)
@@ -124,7 +124,7 @@ const gridStyle = computed<StyleMap>(() => ({
   maxWidth: '960px',
 }))
 
-// ---- image upload ----
+// 图片上传
 function triggerUpload(): void { imageInput.value?.click() }
 
 function handleImageUpload(e: Event): void {
@@ -161,7 +161,7 @@ function cropTo21(img: HTMLImageElement): void {
 function removeBgImage(): void { bgImage.value = null }
 function doPrint(): void { window.print() }
 
-// ---- base panel image upload ----
+// 第三联图片上传
 function triggerBaseUpload(): void { baseImageInput.value?.click() }
 
 function handleBaseImageUpload(e: Event): void {
@@ -197,12 +197,12 @@ function cropBaseImage(img: HTMLImageElement): void {
 
 function removeBaseBgImage(): void { baseBgImage.value = null }
 
-// ---- 3D standee computed ----
+// 3D 立牌计算属性
 const displayName3D = computed(() => {
   return names.value.length > 0 ? names.value[0]! : '名字'
 })
 
-// Pixel geometry -- fixed size, independent of cardSize
+// 3D 立牌像素几何 —— 固定尺寸，与打印纸张大小无关
 const LEAF_BASE = 120
 const leafW = computed(() => LEAF_BASE * 1.6)
 const leafH = computed(() => LEAF_BASE * 0.8)
@@ -260,7 +260,7 @@ const stage3DStyle = computed<StyleMap>(() => ({
   transform: `rotateX(${rotateX3D.value}deg) rotateY(${rotateY3D.value}deg)`,
 }))
 
-// ---- 3D event handlers ----
+// 3D 交互事件
 function pointerDown3D(e: MouseEvent | TouchEvent): void {
   isDragging3D.value = true
   const pt = 'touches' in e ? e.touches[0]! : e
@@ -290,7 +290,7 @@ function reset3DView(): void {
   zoom3D.value = 0
 }
 
-// ---- expand/collapse transition hooks ----
+// 展开 / 折叠过渡动画（Vue Transition 钩子）
 function onSlideBeforeEnter(el: Element): void {
   const htmlEl = el as HTMLElement
   htmlEl.style.height = '0'
@@ -301,7 +301,7 @@ function onSlideBeforeEnter(el: Element): void {
 function onSlideEnter(el: Element, done: () => void): void {
   const htmlEl = el as HTMLElement
   htmlEl.style.transition = 'height 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.35s ease 0.08s'
-  void htmlEl.offsetHeight // force reflow
+  void htmlEl.offsetHeight // 强制回流，确保过渡从初始状态开始
   htmlEl.style.height = htmlEl.scrollHeight + 'px'
   htmlEl.style.opacity = '1'
   const onEnd = (e: TransitionEvent) => {
@@ -320,13 +320,13 @@ function onSlideBeforeLeave(el: Element): void {
   const htmlEl = el as HTMLElement
   htmlEl.style.height = htmlEl.offsetHeight + 'px'
   htmlEl.style.overflow = 'hidden'
-  void htmlEl.offsetHeight // force reflow to commit the explicit height
+  void htmlEl.offsetHeight // 强制回流，将显式高度写入渲染树
 }
 
 function onSlideLeave(el: Element, done: () => void): void {
   const htmlEl = el as HTMLElement
   htmlEl.style.transition = 'height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.22s ease, margin-top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), padding-top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-  void htmlEl.offsetHeight // force reflow
+  void htmlEl.offsetHeight // 强制回流，触发收起动画
   htmlEl.style.height = '0'
   htmlEl.style.opacity = '0'
   htmlEl.style.marginTop = '0'
@@ -342,7 +342,7 @@ function onSlideLeave(el: Element, done: () => void): void {
 
 <template>
   <div class="app">
-    <!-- ==================== SIDEBAR ==================== -->
+    <!-- 左侧边栏 -->
     <aside class="sidebar no-print">
       <a class="sidebar-header" href="https://github.com/cxh1205/name-card-generator" target="_blank" rel="noopener" title="查看开源代码">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
@@ -352,7 +352,7 @@ function onSlideLeave(el: Element, done: () => void): void {
         </span>
       </a>
 
-      <!-- Name Input -->
+      <!-- 名字输入 -->
       <div class="panel">
         <div class="panel-label">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -369,7 +369,7 @@ function onSlideLeave(el: Element, done: () => void): void {
         <div class="hint">支持换行、逗号、顿号分隔</div>
       </div>
 
-      <!-- Card size -->
+      <!-- 纸张边长 -->
       <div class="panel">
         <div class="panel-label">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg>
@@ -384,7 +384,7 @@ function onSlideLeave(el: Element, done: () => void): void {
         </div>
       </div>
 
-      <!-- Background -->
+      <!-- 背景设置 -->
       <div class="panel">
         <div class="panel-label">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
@@ -411,7 +411,7 @@ function onSlideLeave(el: Element, done: () => void): void {
         <div class="hint" v-if="bgImage">图片已自动裁剪为 2:1 填充半张卡</div>
       </div>
 
-      <!-- Base Panel (Third Section) -->
+      <!-- 第三联（底部面板） -->
       <div class="panel">
         <div class="panel-label panel-label-clickable" @click="showBase = !showBase">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
@@ -450,7 +450,7 @@ function onSlideLeave(el: Element, done: () => void): void {
         </Transition>
       </div>
 
-      <!-- Font -->
+      <!-- 字体设置 -->
       <div class="panel">
         <div class="panel-label">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
@@ -511,7 +511,7 @@ function onSlideLeave(el: Element, done: () => void): void {
         </span>
       </div>
 
-      <!-- Print (sticky) -->
+      <!-- 打印按钮（吸底固定） -->
       <div class="print-sticky">
         <button class="print-btn" @click="doPrint" :disabled="names.length === 0">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 12H4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
@@ -520,9 +520,9 @@ function onSlideLeave(el: Element, done: () => void): void {
       </div>
     </aside>
 
-    <!-- ==================== RIGHT PANEL ==================== -->
+    <!-- 右侧面板 -->
     <div class="right-panel">
-      <!-- column selector -->
+      <!-- 列数切换 & 3D 开关 -->
       <div class="col-bar no-print">
         <span class="col-bar-label">预览列数</span>
         <div class="btn-group">
@@ -535,9 +535,9 @@ function onSlideLeave(el: Element, done: () => void): void {
         </span>
       </div>
 
-      <!-- preview -->
+      <!-- 预览区 -->
       <main class="preview" :class="{ 'preview-split': show3D && names.length > 0 }">
-        <!-- 3D off + no names: empty state -->
+        <!-- 无名字时的空状态提示 -->
         <div v-if="!show3D && names.length === 0" class="empty-state">
           <div class="empty-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
@@ -546,7 +546,7 @@ function onSlideLeave(el: Element, done: () => void): void {
           <p class="empty-desc">名字将自动排版为可折叠的三角形名牌</p>
         </div>
 
-        <!-- 3D off + has names: cards only -->
+        <!-- 仅卡片预览（3D 关闭时） -->
         <div v-else-if="!show3D" class="cards-grid" :style="gridStyle">
           <div v-for="(name, index) in names" :key="index" class="card" :class="{ 'has-base': showBase }" :style="cardStyle">
             <div class="half half-top" :style="halfStyle">
@@ -563,7 +563,7 @@ function onSlideLeave(el: Element, done: () => void): void {
           </div>
         </div>
 
-        <!-- 3D on + has names: split view -->
+        <!-- 3D + 卡片分屏预览 -->
         <template v-else-if="names.length > 0">
           <div class="preview-left">
             <div class="cards-grid" :style="gridStyle">
@@ -599,21 +599,21 @@ function onSlideLeave(el: Element, done: () => void): void {
               <div class="standee-cam" :style="camStyle">
                 <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
                   <div class="standee" :style="standeeVars">
-                  <!-- Front leaf = half-bottom: content on element front, white on element back -->
+                  <!-- 前叶片：正面显示名字内容，背面为纯白色 -->
                   <div class="leaf leaf-front">
                     <div class="leaf-face leaf-face-front" :style="leaf3DContent">
                       <span class="standee-name" v-html="displayName(displayName3D)"></span>
                     </div>
                     <div class="leaf-face leaf-face-back leaf-face-white"></div>
                   </div>
-                  <!-- Back leaf = half-top: content on element back, white on element front -->
+                  <!-- 后叶片：正面为纯白色，背面显示名字内容 -->
                   <div class="leaf leaf-back">
                     <div class="leaf-face leaf-face-front leaf-face-white"></div>
                     <div class="leaf-face leaf-face-back" :style="leaf3DContent">
                       <span class="standee-name" v-html="displayName(displayName3D)"></span>
                     </div>
                   </div>
-                  <!-- Base: horizontal plate connecting bottom edges -->
+                  <!-- 底板：连接前后叶片底边的水平面 -->
                   <div v-if="showBase" class="leaf leaf-base">
                     <div class="leaf-face leaf-face-front" :style="base3DContent"></div>
                     <div class="leaf-face leaf-face-back leaf-face-white"></div>
@@ -627,7 +627,7 @@ function onSlideLeave(el: Element, done: () => void): void {
           </div>
         </template>
 
-        <!-- 3D on + no names: full-width 3D only -->
+        <!-- 仅 3D 立牌全宽显示（无名字时） -->
         <div v-else class="preview-3d-full"
              @mousedown="pointerDown3D"
              @mousemove="pointerMove3D"
@@ -676,7 +676,7 @@ function onSlideLeave(el: Element, done: () => void): void {
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ---- scrollbar ---- */
+/* 滚动条 */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -716,9 +716,7 @@ html, body, #app {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ============================================================
-   LAYOUT
-   ============================================================ */
+/* 整体布局 */
 .app { display: flex; height: 100vh; overflow: hidden; }
 
 .right-panel {
@@ -727,9 +725,7 @@ html, body, #app {
   overflow: hidden;
 }
 
-/* ============================================================
-   SIDEBAR
-   ============================================================ */
+/* 侧边栏 */
 .sidebar {
   width: 312px; min-width: 312px;
   background: #fff;
@@ -788,7 +784,7 @@ html, body, #app {
   filter: blur(0);
 }
 
-/* ---- Panels ---- */
+/* 设置面板 */
 .panel {
   background: var(--slate-50);
   border: 1px solid var(--slate-200);
@@ -818,7 +814,7 @@ html, body, #app {
 
 .hint { font-size: 11.5px; color: var(--slate-400); line-height: 1.4; }
 
-/* ---- Name Input ---- */
+/* 名字输入框 */
 .name-input {
   width: 100%; padding: 10px 12px;
   border: 1px solid var(--slate-200); border-radius: 6px;
@@ -832,7 +828,7 @@ html, body, #app {
 }
 .name-input::placeholder { color: var(--slate-300); }
 
-/* ---- Button Group ---- */
+/* 按钮组 */
 .btn-group { display: flex; gap: 1px; background: var(--slate-200); border-radius: 6px; padding: 2px; }
 .btn-group button {
   flex: 1; padding: 6px 0;
@@ -846,12 +842,12 @@ html, body, #app {
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
-/* ---- Slider ---- */
+/* 滑块 */
 .slider-row { display: flex; align-items: center; gap: 8px; }
 .slider-end { font-size: 11px; color: var(--slate-400); font-weight: 500; flex-shrink: 0; }
 input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 
-/* ---- Background ---- */
+/* 背景设置 */
 .bg-row { display: flex; gap: 8px; align-items: center; }
 
 .color-swatch {
@@ -886,7 +882,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 
 .hidden-input { display: none; }
 
-/* ---- Font ---- */
+/* 字体设置 */
 .font-grid { display: flex; gap: 8px; }
 .font-item { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .font-item-label { font-size: 11px; color: var(--slate-400); font-weight: 500; }
@@ -903,7 +899,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 }
 .auto-badge strong { color: var(--blue-600); }
 
-/* ---- Print Button ---- */
+/* 打印按钮 */
 .print-sticky {
   position: sticky; bottom: 0; background: #fff;
   margin-top: auto;
@@ -926,9 +922,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 .print-btn:active:not(:disabled) { transform: translateY(0); }
 .print-btn:disabled { background: var(--slate-200); color: var(--slate-400); cursor: not-allowed; box-shadow: none; }
 
-/* ============================================================
-   COLUMN BAR (top of right panel)
-   ============================================================ */
+/* 顶部工具栏 */
 .col-bar {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 20px;
@@ -954,7 +948,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   white-space: nowrap;
 }
 
-/* Generic toggle track & thumb — shared by all toggle switches */
+/* 通用开关：所有 toggle 共用此样式 */
 .toggle-track {
   width: 36px; height: 20px;
   background: var(--slate-300);
@@ -980,9 +974,9 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   transform: translateX(16px);
 }
 
-/* ---- Expand/collapse transition — handled by JS hooks (onSlideEnter/Leave) ---- */
+/* 展开 / 折叠由 JS 钩子函数控制过渡 */
 
-/* ---- Clickable panel label ---- */
+/* 可点击的面板标题 */
 .panel-label-clickable {
   cursor: pointer;
   transition: background 0.15s;
@@ -994,7 +988,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   background: var(--slate-200);
 }
 
-/* ---- Toggle row (e.g. font auto-fill) ---- */
+/* 切换行（如字体自动撑满开关） */
 .toggle-row {
   display: flex;
   align-items: center;
@@ -1009,7 +1003,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   font-weight: 500;
 }
 
-/* ---- Image select with hover delete ---- */
+/* 图片缩略图（悬停出现删除按钮） */
 .img-select {
   position: relative;
   flex: 1;
@@ -1046,9 +1040,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   pointer-events: auto;
 }
 
-/* ============================================================
-   PREVIEW AREA
-   ============================================================ */
+/* 预览区 */
 .preview {
   flex: 1;
   overflow: auto;
@@ -1112,9 +1104,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   paint-order: stroke fill;
 }
 
-/* ============================================================
-   SPLIT PREVIEW LAYOUT
-   ============================================================ */
+/* 分屏预览布局 */
 .preview-split {
   flex-direction: row;
   align-items: stretch;
@@ -1167,11 +1157,9 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 }
 .preview-3d-full:active { cursor: grabbing; }
 
-/* ============================================================
-   3D STANDEE
-   ============================================================ */
+/* 3D 立牌 */
 
-/* ---- Scene & Stage ---- */
+/* 3D 场景与舞台 */
 .standee-scene {
   display: flex;
   flex-direction: column;
@@ -1195,7 +1183,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   transition: none;
 }
 
-/* ---- Model container ---- */
+/* 模型容器 */
 .standee {
   position: relative;
   transform-style: preserve-3d;
@@ -1203,7 +1191,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   height: var(--tri-h);
 }
 
-/* ---- Leaves (faces of the triangle) ---- */
+/* 叶片（三角形的两个斜面） */
 .leaf {
   position: absolute;
   left: 0; top: 0;
@@ -1212,26 +1200,25 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   transform-style: preserve-3d;
 }
 
-/* Front leaf: tilts toward viewer. 30° from vertical = 60° from horizontal. */
+/* 前叶片：向观察者倾斜 30° */
 .leaf-front {
   transform-origin: 50% 0%;
   transform: rotateX(30deg);
 }
 
-/* Back leaf: tilts away from viewer. -30° from vertical = 60° from horizontal. */
-/* 30° + 30° = 60° between the two leaves = equilateral triangle interior angle. */
+/* 后叶片：远离观察者倾斜 -30°，两叶片夹角 30° + 30° = 60° = 等边三角形内角 */
 .leaf-back {
   transform-origin: 50% 0%;
   transform: rotateX(-30deg);
 }
 
-/* Base: horizontal plate connecting bottom edges of front and back leaves. */
+/* 底板：水平连接前后叶片底部 */
 .leaf-base {
   transform-origin: 50% 0%;
   transform: translateY(var(--tri-h)) translateZ(var(--half-z)) rotateX(-90deg);
 }
 
-/* ---- Leaf faces (two sides of each leaf) ---- */
+/* 叶片正反面 */
 .leaf-face {
   position: absolute;
   border: #eee 1px solid;
@@ -1244,17 +1231,17 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   overflow: hidden;
 }
 
-/* The back face of each leaf element (rotateY 180° flips it to the other side) */
+/* 反面：rotateY(180deg) 翻转到另一侧 */
 .leaf-face-back {
   transform: rotateY(180deg);
 }
 
-/* Inner face: pure white */
+/* 内侧为纯白 */
 .leaf-face-white {
   background: #fff;
 }
 
-/* ---- Lighting gradients ---- */
+/* 光照渐变（伪元素模拟立体光影） */
 .leaf-front .leaf-face-front::after {
   content: '';
   position: absolute; inset: 0;
@@ -1276,7 +1263,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   pointer-events: none;
 }
 
-/* ---- Name display ---- */
+/* 名字文字 */
 .standee-name {
   white-space: pre;
   line-height: 1;
@@ -1285,7 +1272,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   paint-order: stroke fill;
 }
 
-/* ---- Shadow ---- */
+/* 地面阴影 */
 .standee-shadow {
   width: 70%;
   max-width: 260px;
@@ -1296,7 +1283,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   pointer-events: none;
 }
 
-/* ---- Hint text ---- */
+/* 操作提示文字 */
 .standee-hint {
   margin-top: 10px;
   font-size: 12px;
@@ -1304,7 +1291,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   pointer-events: none;
 }
 
-/* ---- Reset button ---- */
+/* 回正按钮 */
 .reset-3d-btn {
   position: absolute;
   top: 10px; right: 10px;
@@ -1325,9 +1312,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 }
 .reset-3d-btn svg { flex-shrink: 0; }
 
-/* ============================================================
-   PRINT
-   ============================================================ */
+/* 打印样式 */
 @media print {
   @page { size: A4; margin: 0; }
 
