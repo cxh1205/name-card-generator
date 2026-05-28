@@ -189,9 +189,10 @@ const displayName3D = computed(() => {
   return names.value.length > 0 ? names.value[0] : '名字'
 })
 
-// Pixel geometry derived from cardSize (mm)
-const leafW = computed(() => cardSize.value * 1.6)
-const leafH = computed(() => cardSize.value * 0.8)
+// Pixel geometry -- fixed size, independent of cardSize
+  const LEAF_BASE = 120
+const leafW = computed(() => LEAF_BASE * 1.6)
+const leafH = computed(() => LEAF_BASE * 0.8)
 const triH = computed(() => leafH.value * Math.cos(Math.PI / 6))
 const halfZ = computed(() => leafH.value * Math.sin(Math.PI / 6))
 
