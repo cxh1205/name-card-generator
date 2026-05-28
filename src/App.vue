@@ -21,9 +21,9 @@ const baseImageInput = ref(null)
 
 // ---- 3D standee ----
 const show3D = ref(false)
-const rotateX3D = ref(-20)
-const rotateY3D = ref(30)
-const zoom3D = ref(0)
+const rotateX3D = ref(-25)
+const rotateY3D = ref(35)
+const zoom3D = ref(1)
 const isDragging3D = ref(false)
 const dragStart3D = ref({ x: 0, y: 0, rx: 0, ry: 0 })
 
@@ -174,41 +174,59 @@ function cropBaseImage(img) {
 
 function removeBaseBgImage() { baseBgImage.value = null }
 
-// ---- 3D standee computed & handlers ----
+// ---- 3D standee computed ----
 const displayName3D = computed(() => {
   return names.value.length > 0 ? names.value[0] : '名字'
 })
 
-const stage3DStyle = computed(() => ({
-  transform: `translateZ(${zoom3D.value}px) rotateX(${rotateX3D.value}deg) rotateY(${rotateY3D.value}deg)`,
+// Pixel geometry derived from cardSize (mm)
+const leafW = computed(() => cardSize.value * 1.6)
+const leafH = computed(() => cardSize.value * 0.8)
+const triH = computed(() => leafH.value * Math.cos(Math.PI / 6))
+const halfZ = computed(() => leafH.value * Math.sin(Math.PI / 6))
+
+const standeeVars = computed(() => ({
+  '--leaf-w': leafW.value + 'px',
+  '--leaf-h': leafH.value + 'px',
+  '--tri-h': triH.value.toFixed(1) + 'px',
+  '--half-z': halfZ.value.toFixed(1) + 'px',
 }))
 
-const leaf3DStyle = computed(() => {
+const fontSize3D = computed(() => {
+  return Math.round(leafH.value * fontPctEffective.value / 100) + 'px'
+})
+
+const leaf3DContent = computed(() => {
   const s = {
     backgroundColor: bgColor.value,
     color: fontColor.value,
     fontWeight: fontWeight.value,
     fontFamily: '"KaiTi", "STKaiti", "楷体", "KaiTi SC", "AR PL UKai CN", serif',
-    fontSize: `${Math.round(130 * fontPctEffective.value / 100)}px`,
+    fontSize: fontSize3D.value,
   }
   if (bgImage.value) {
     s.backgroundImage = `url(${bgImage.value})`
     s.backgroundSize = '100% 100%'
+    s.backgroundRepeat = 'no-repeat'
   }
   return s
 })
 
-const base3DStyle = computed(() => {
-  const s = {
-    backgroundColor: baseBgColor.value,
-  }
+const base3DContent = computed(() => {
+  const s = { backgroundColor: baseBgColor.value }
   if (baseBgImage.value) {
     s.backgroundImage = `url(${baseBgImage.value})`
     s.backgroundSize = '100% 100%'
+    s.backgroundRepeat = 'no-repeat'
   }
   return s
 })
 
+const stage3DStyle = computed(() => ({
+  transform: `rotateX(${rotateX3D.value}deg) rotateY(${rotateY3D.value}deg) scale(${zoom3D.value})`,
+}))
+
+// ---- 3D event handlers ----
 function pointerDown3D(e) {
   isDragging3D.value = true
   const pt = e.touches ? e.touches[0] : e
@@ -219,8 +237,8 @@ function pointerMove3D(e) {
   if (!isDragging3D.value) return
   const pt = e.touches ? e.touches[0] : e
   if (!pt) return
-  rotateY3D.value = dragStart3D.value.ry + (pt.clientX - dragStart3D.value.x) * 0.5
-  rotateX3D.value = dragStart3D.value.rx - (pt.clientY - dragStart3D.value.y) * 0.5
+  rotateY3D.value = dragStart3D.value.ry + (pt.clientX - dragStart3D.value.x) * 0.4
+  rotateX3D.value = dragStart3D.value.rx - (pt.clientY - dragStart3D.value.y) * 0.4
 }
 
 function pointerUp3D() {
@@ -229,13 +247,13 @@ function pointerUp3D() {
 
 function onWheel3D(e) {
   e.preventDefault()
-  zoom3D.value = Math.max(-400, Math.min(600, zoom3D.value - e.deltaY * 0.5))
+  zoom3D.value = Math.max(0.3, Math.min(4, zoom3D.value - e.deltaY * 0.002))
 }
 
 function reset3DView() {
-  rotateX3D.value = -20
-  rotateY3D.value = 30
-  zoom3D.value = 0
+  rotateX3D.value = -25
+  rotateY3D.value = 35
+  zoom3D.value = 1
 }
 </script>
 
@@ -466,23 +484,29 @@ function reset3DView() {
             </button>
             <div class="standee-scene">
               <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
-                <div class="standee">
+                <div class="standee" :style="standeeVars">
+                  <!-- Front leaf = half-bottom: content on element front, white on element back -->
                   <div class="leaf leaf-front">
-                    <div class="leaf-face" :style="leaf3DStyle">
-                      <span class="standee-name">{{ displayName3D }}</span>
+                    <div class="leaf-face leaf-face-front" :style="leaf3DContent">
+                      <span class="standee-name" v-html="displayName(displayName3D)"></span>
                     </div>
+                    <div class="leaf-face leaf-face-back leaf-face-white"></div>
                   </div>
+                  <!-- Back leaf = half-top: content on element back, white on element front -->
                   <div class="leaf leaf-back">
-                    <div class="leaf-face" :style="leaf3DStyle">
-                      <span class="standee-name flip">{{ displayName3D }}</span>
+                    <div class="leaf-face leaf-face-front leaf-face-white"></div>
+                    <div class="leaf-face leaf-face-back" :style="leaf3DContent">
+                      <span class="standee-name" v-html="displayName(displayName3D)"></span>
                     </div>
                   </div>
+                  <!-- Base: horizontal plate connecting bottom edges -->
                   <div v-if="showBase" class="leaf leaf-base">
-                    <div class="leaf-face" :style="base3DStyle"></div>
+                    <div class="leaf-face leaf-face-front" :style="base3DContent"></div>
+                    <div class="leaf-face leaf-face-back leaf-face-white"></div>
                   </div>
                 </div>
               </div>
-              <div class="standee-ground"></div>
+              <div class="standee-shadow"></div>
             </div>
             <p class="standee-hint">拖拽旋转 / 滚轮缩放</p>
           </div>
@@ -504,23 +528,26 @@ function reset3DView() {
           </button>
           <div class="standee-scene">
             <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
-              <div class="standee">
+              <div class="standee" :style="standeeVars">
                 <div class="leaf leaf-front">
-                  <div class="leaf-face" :style="leaf3DStyle">
-                    <span class="standee-name">{{ displayName3D }}</span>
+                  <div class="leaf-face leaf-face-front" :style="leaf3DContent">
+                    <span class="standee-name" v-html="displayName(displayName3D)"></span>
                   </div>
+                  <div class="leaf-face leaf-face-back leaf-face-white"></div>
                 </div>
                 <div class="leaf leaf-back">
-                  <div class="leaf-face" :style="leaf3DStyle">
-                    <span class="standee-name flip">{{ displayName3D }}</span>
+                  <div class="leaf-face leaf-face-front leaf-face-white"></div>
+                  <div class="leaf-face leaf-face-back" :style="leaf3DContent">
+                    <span class="standee-name" v-html="displayName(displayName3D)"></span>
                   </div>
                 </div>
                 <div v-if="showBase" class="leaf leaf-base">
-                  <div class="leaf-face" :style="base3DStyle"></div>
+                  <div class="leaf-face leaf-face-front" :style="base3DContent"></div>
+                  <div class="leaf-face leaf-face-back leaf-face-white"></div>
                 </div>
               </div>
             </div>
-            <div class="standee-ground"></div>
+            <div class="standee-shadow"></div>
           </div>
           <p class="standee-hint">拖拽旋转 / 滚轮缩放</p>
         </div>
@@ -902,7 +929,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 }
 
 /* ============================================================
-   SPLIT PREVIEW & 3D STANDEE
+   SPLIT PREVIEW LAYOUT
    ============================================================ */
 .preview-split {
   flex-direction: row;
@@ -955,15 +982,19 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   position: relative;
 }
 .preview-3d-full:active { cursor: grabbing; }
-.preview-right:active { cursor: grabbing; }
 
+/* ============================================================
+   3D STANDEE
+   ============================================================ */
+
+/* ---- Scene & Stage ---- */
 .standee-scene {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   perspective: 900px;
-  perspective-origin: 50% 50%;
+  perspective-origin: 50% 40%;
 }
 
 .standee-stage {
@@ -975,70 +1006,87 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   transition: none;
 }
 
+/* ---- Model container ---- */
 .standee {
-  transform-style: preserve-3d;
   position: relative;
-  width: 260px;
-  height: 150px;
+  transform-style: preserve-3d;
+  width: var(--leaf-w);
+  height: var(--tri-h);
 }
 
+/* ---- Leaves (faces of the triangle) ---- */
 .leaf {
   position: absolute;
   left: 0; top: 0;
-  width: 260px;
-  height: 130px;
-  transform-origin: top center;
+  width: var(--leaf-w);
+  height: var(--leaf-h);
   transform-style: preserve-3d;
-  border-radius: 2px;
-  backface-visibility: visible;
-  background: #fff;
 }
 
+/* Front leaf: tilts toward viewer. 30° from vertical = 60° from horizontal. */
 .leaf-front {
+  transform-origin: 50% 0%;
   transform: rotateX(30deg);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
+/* Back leaf: tilts away from viewer. -30° from vertical = 60° from horizontal. */
+/* 30° + 30° = 60° between the two leaves = equilateral triangle interior angle. */
 .leaf-back {
+  transform-origin: 50% 0%;
   transform: rotateX(-30deg);
 }
 
+/* Base: horizontal plate connecting bottom edges of front and back leaves. */
 .leaf-base {
-  top: 48px;
-  height: 130px;
-  transform: rotateX(90deg);
-  transform-origin: center center;
-  border-radius: 2px;
-  box-shadow: none;
+  transform-origin: 50% 0%;
+  transform: translateY(var(--tri-h)) translateZ(var(--half-z)) rotateX(-90deg);
 }
 
+/* ---- Leaf faces (two sides of each leaf) ---- */
 .leaf-face {
   position: absolute;
   inset: 0;
+  backface-visibility: hidden;
+  border-radius: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 2px;
   overflow: hidden;
-  backface-visibility: hidden;
-  transform: translateZ(0.5px);
 }
 
-.leaf-face::after {
+/* The back face of each leaf element (rotateY 180° flips it to the other side) */
+.leaf-face-back {
+  transform: rotateY(180deg);
+}
+
+/* Inner face: pure white */
+.leaf-face-white {
+  background: #fff;
+}
+
+/* ---- Lighting gradients ---- */
+.leaf-front .leaf-face-front::after {
   content: '';
-  position: absolute;
-  inset: 0;
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 55%);
   pointer-events: none;
 }
 
-.leaf-front .leaf-face::after {
-  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 60%);
+.leaf-back .leaf-face-back::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, transparent 65%);
+  pointer-events: none;
 }
 
-.leaf-back .leaf-face::after {
-  background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.05) 100%);
+.leaf-base .leaf-face-front::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(0deg, rgba(0,0,0,0.04) 0%, transparent 40%);
+  pointer-events: none;
 }
 
+/* ---- Name display ---- */
 .standee-name {
   white-space: pre;
   line-height: 1;
@@ -1046,26 +1094,26 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
   pointer-events: none;
 }
 
-.standee-name.flip {
-  transform: scaleX(-1);
-}
-
-.standee-ground {
-  width: 200px;
-  height: 30px;
-  margin-top: -36px;
-  background: radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, transparent 70%);
+/* ---- Shadow ---- */
+.standee-shadow {
+  width: 70%;
+  max-width: 260px;
+  height: 24px;
+  margin-top: 12px;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.18) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
 }
 
+/* ---- Hint text ---- */
 .standee-hint {
-  margin-top: 12px;
+  margin-top: 10px;
   font-size: 12px;
   color: var(--slate-400);
   pointer-events: none;
 }
 
+/* ---- Reset button ---- */
 .reset-3d-btn {
   position: absolute;
   top: 10px; right: 10px;
