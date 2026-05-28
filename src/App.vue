@@ -312,7 +312,14 @@ function reset3DView() {
           背景
         </div>
         <div class="bg-row">
-          <div class="color-swatch">
+          <div v-if="bgImage" class="img-select" @click="removeBgImage">
+            <img :src="bgImage" class="img-thumb-lg" />
+            <div class="img-delete-overlay">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              <span>删除</span>
+            </div>
+          </div>
+          <div v-else class="color-swatch">
             <input type="color" v-model="bgColor" class="color-input" />
             <span class="color-hex">{{ bgColor }}</span>
           </div>
@@ -322,45 +329,41 @@ function reset3DView() {
           </button>
           <input ref="imageInput" type="file" accept="image/*" class="hidden-input" @change="handleImageUpload" />
         </div>
-        <div v-if="bgImage" class="img-preview-row">
-          <img :src="bgImage" class="img-thumb" />
-          <button class="remove-img" @click="removeBgImage" title="移除图片">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
         <div class="hint" v-if="bgImage">图片已自动裁剪为 2:1 填充半张卡</div>
       </div>
 
       <!-- Base Panel (Third Section) -->
       <div class="panel">
-        <div class="panel-label">
+        <div class="panel-label panel-label-clickable" @click="showBase = !showBase">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
           第三联（底部）
-          <label class="auto-check" style="margin-left:auto;font-size:12px">
-            <input type="checkbox" v-model="showBase" />
-            <span>启用</span>
-          </label>
+          <span class="toggle-sw" style="margin-left:auto" @click.stop="showBase = !showBase">
+            <span class="toggle-track" :class="{ active: showBase }"><span class="toggle-thumb"></span></span>
+          </span>
         </div>
-        <template v-if="showBase">
-          <div class="bg-row">
-            <div class="color-swatch">
-              <input type="color" v-model="baseBgColor" class="color-input" />
-              <span class="color-hex">{{ baseBgColor }}</span>
+        <div class="expand-section" :class="{ expanded: showBase }">
+          <div class="expand-inner" style="padding-top:8px;display:flex;flex-direction:column;gap:8px">
+            <div class="bg-row">
+              <div v-if="baseBgImage" class="img-select" @click="removeBaseBgImage">
+                <img :src="baseBgImage" class="img-thumb-lg" />
+                <div class="img-delete-overlay">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  <span>删除</span>
+                </div>
+              </div>
+              <div v-else class="color-swatch">
+                <input type="color" v-model="baseBgColor" class="color-input" />
+                <span class="color-hex">{{ baseBgColor }}</span>
+              </div>
+              <button class="upload-btn" @click="triggerBaseUpload" :class="{ 'has-image': baseBgImage }">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                {{ baseBgImage ? '更换图片' : '上传图片' }}
+              </button>
+              <input ref="baseImageInput" type="file" accept="image/*" class="hidden-input" @change="handleBaseImageUpload" />
             </div>
-            <button class="upload-btn" @click="triggerBaseUpload" :class="{ 'has-image': baseBgImage }">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              {{ baseBgImage ? '更换图片' : '上传图片' }}
-            </button>
-            <input ref="baseImageInput" type="file" accept="image/*" class="hidden-input" @change="handleBaseImageUpload" />
+            <div class="hint" v-if="baseBgImage">图片已自动裁剪为 2:1 填充底部</div>
           </div>
-          <div v-if="baseBgImage" class="img-preview-row">
-            <img :src="baseBgImage" class="img-thumb" />
-            <button class="remove-img" @click="removeBaseBgImage" title="移除图片">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <div class="hint" v-if="baseBgImage">图片已自动裁剪为 2:1 填充底部</div>
-        </template>
+        </div>
       </div>
 
       <!-- Font -->
@@ -385,20 +388,24 @@ function reset3DView() {
             </select>
           </div>
         </div>
-        <div class="font-size-row">
-          <label class="auto-check">
-            <input type="checkbox" v-model="autoFill" />
-            <span>自动撑满卡片</span>
-          </label>
-          <div v-if="!autoFill" class="slider-row" style="margin-top:6px">
-            <span class="slider-end">10%</span>
-            <input type="range" v-model.number="fontPct" min="10" max="95" step="1" />
-            <span class="slider-end">95%</span>
-          </div>
-          <span class="auto-badge">
-            {{ autoFill ? '自动' : '手动' }}：字号占半卡高度的 <strong>{{ fontPctEffective }}%</strong>
+        <div class="toggle-row" @click="autoFill = !autoFill">
+          <span class="toggle-label-text">文字自动撑满卡片</span>
+          <span class="toggle-sw" @click.stop="autoFill = !autoFill">
+            <span class="toggle-track" :class="{ active: autoFill }"><span class="toggle-thumb"></span></span>
           </span>
         </div>
+        <div class="expand-section" :class="{ expanded: !autoFill }">
+          <div class="expand-inner" style="padding-top:8px;display:flex;flex-direction:column;gap:4px">
+            <div class="slider-row">
+              <span class="slider-end">10%</span>
+              <input type="range" v-model.number="fontPct" min="10" max="95" step="1" />
+              <span class="slider-end">95%</span>
+            </div>
+          </div>
+        </div>
+        <span class="auto-badge">
+          {{ autoFill ? '自动' : '手动' }}：字号占半卡高度的 <strong>{{ fontPctEffective }}%</strong>
+        </span>
       </div>
 
       <!-- Print (sticky) -->
@@ -419,11 +426,10 @@ function reset3DView() {
           <button v-for="n in [1,2,3]" :key="n" :class="{ active: columns === n }" @click="columns = n">{{ n }} 列</button>
         </div>
         <div class="col-bar-spacer"></div>
-        <label class="toggle-3d">
-          <input type="checkbox" v-model="show3D" />
-          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span class="toggle-3d" @click="show3D = !show3D">
+          <span class="toggle-track" :class="{ active: show3D }"><span class="toggle-thumb"></span></span>
           <span class="toggle-label">3D 立牌</span>
-        </label>
+        </span>
       </div>
 
       <!-- preview -->
@@ -759,20 +765,6 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 
 .hidden-input { display: none; }
 
-.img-preview-row { display: flex; align-items: center; gap: 8px; }
-.img-thumb {
-  width: 100%; height: 40px;
-  object-fit: cover; border-radius: 4px; border: 1px solid var(--slate-200);
-}
-.remove-img {
-  display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px;
-  border: none; background: #fee2e2; color: #ef4444;
-  border-radius: 6px; cursor: pointer; flex-shrink: 0;
-  transition: background 0.15s;
-}
-.remove-img:hover { background: #fecaca; }
-
 /* ---- Font ---- */
 .font-grid { display: flex; gap: 8px; }
 .font-item { flex: 1; display: flex; flex-direction: column; gap: 4px; }
@@ -785,14 +777,6 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 }
 .select:focus { outline: none; border-color: var(--blue-500); }
 
-.font-size-row { display: flex; flex-direction: column; }
-.auto-check {
-  display: flex; align-items: center; gap: 7px;
-  font-size: 13px; color: var(--slate-700); cursor: pointer; user-select: none;
-}
-.auto-check input[type="checkbox"] {
-  width: 16px; height: 16px; accent-color: var(--blue-600); cursor: pointer;
-}
 .auto-badge {
   font-size: 11.5px; color: var(--slate-500); margin-top: 2px;
 }
@@ -841,36 +825,112 @@ input[type="range"] { flex: 1; accent-color: var(--blue-600); height: 4px; }
 
 .col-bar-spacer { flex: 1; }
 
-.toggle-3d {
+.toggle-3d,
+.toggle-sw {
   display: flex; align-items: center; gap: 8px;
   cursor: pointer; user-select: none;
   font-size: 13px; font-weight: 500; color: var(--slate-700);
   white-space: nowrap;
 }
-.toggle-3d input[type="checkbox"] { display: none; }
 
+/* Generic toggle track & thumb — shared by all toggle switches */
 .toggle-track {
-  width: 38px; height: 22px;
+  width: 36px; height: 20px;
   background: var(--slate-300);
-  border-radius: 11px;
+  border-radius: 10px;
   position: relative;
   transition: background 0.2s;
+  flex-shrink: 0;
 }
-.toggle-3d input:checked + .toggle-track {
+.toggle-track.active {
   background: var(--blue-600);
 }
 
 .toggle-thumb {
   position: absolute;
   top: 2px; left: 2px;
-  width: 18px; height: 18px;
+  width: 16px; height: 16px;
   background: #fff;
   border-radius: 50%;
   transition: transform 0.2s;
   box-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
-.toggle-3d input:checked + .toggle-track .toggle-thumb {
+.toggle-track.active .toggle-thumb {
   transform: translateX(16px);
+}
+
+/* ---- Expand/collapse animation ---- */
+.expand-section {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.expand-section.expanded {
+  max-height: 300px;
+}
+
+/* ---- Clickable panel label ---- */
+.panel-label-clickable {
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 6px;
+  padding: 3px 6px;
+  margin: -3px -6px;
+}
+.panel-label-clickable:hover {
+  background: var(--slate-200);
+}
+
+/* ---- Toggle row (e.g. font auto-fill) ---- */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 0;
+}
+.toggle-row .toggle-label-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--slate-700);
+  font-weight: 500;
+}
+
+/* ---- Image select with hover delete ---- */
+.img-select {
+  position: relative;
+  flex: 1;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.img-thumb-lg {
+  width: 100%;
+  height: 54px;
+  object-fit: cover;
+  display: block;
+  border-radius: 6px;
+  border: 1px solid var(--slate-200);
+}
+.img-delete-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(239, 68, 68, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  pointer-events: none;
+}
+.img-select:hover .img-delete-overlay {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* ============================================================
