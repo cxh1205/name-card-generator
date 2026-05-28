@@ -628,6 +628,22 @@ function onSlideLeave(el, done) {
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ---- scrollbar ---- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 :root {
   --slate-50:  #f8fafc;
   --slate-100: #f1f5f9;
