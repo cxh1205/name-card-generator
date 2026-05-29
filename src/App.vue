@@ -362,14 +362,14 @@ function onSlideLeave(el: Element, done: () => void): void {
           <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
           字体
         </div>
-        <div class="flex gap-2 items-end">
+        <div class="flex gap-2 items-start">
           <div class="flex-1 flex flex-col gap-1 min-w-0">
             <span class="text-[11px] text-slate-400 font-medium">颜色</span>
             <ColorPicker v-model="fontColor" />
           </div>
           <div class="flex-1 flex flex-col gap-1 min-w-0">
             <span class="text-[11px] text-slate-400 font-medium">粗细</span>
-            <select v-model.number="fontWeight" class="px-1.5 py-[5px] border border-slate-200 rounded-md text-xs font-sans text-slate-700 bg-white cursor-pointer h-[30px] box-border focus:outline-none focus:border-blue-500">
+            <select v-model.number="fontWeight" class="px-1.5 py-[5px] border border-slate-200 rounded-md text-xs font-sans text-slate-700 bg-white cursor-pointer h-[30px] box-border focus:outline-none focus:border-blue-500 w-full">
               <option :value="300">Light</option>
               <option :value="400">Regular</option>
               <option :value="600">Semi Bold</option>
@@ -378,16 +378,16 @@ function onSlideLeave(el: Element, done: () => void): void {
             </select>
           </div>
         </div>
-        <div class="flex gap-2 items-end mt-2">
+        <div class="flex gap-2 items-start mt-2">
           <div class="flex-1 flex flex-col gap-1 min-w-0">
             <span class="text-[11px] text-slate-400 font-medium">描边颜色</span>
             <ColorPicker v-model="strokeColor" />
           </div>
           <div class="flex-1 flex flex-col gap-1 min-w-0">
             <span class="text-[11px] text-slate-400 font-medium">描边粗细 {{ strokePct }}%</span>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 h-[30px]">
               <span class="text-[11px] text-slate-400 font-medium shrink-0">0</span>
-              <input type="range" v-model.number="strokePct" min="0" max="8" step="0.5" class="flex-1 accent-blue-600 h-1" />
+              <input type="range" v-model.number="strokePct" min="0" max="8" step="0.5" class="flex-1 accent-blue-600 h-1 min-w-0" />
               <span class="text-[11px] text-slate-400 font-medium shrink-0">8%</span>
             </div>
           </div>
@@ -512,7 +512,7 @@ function onSlideLeave(el: Element, done: () => void): void {
               </div>
             </div>
           </div>
-          <div class="flex-1 overflow-hidden flex flex-col items-center justify-center border-l border-slate-200 cursor-grab select-none relative active:cursor-grabbing"
+          <div class="flex-1 overflow-hidden flex flex-col items-center justify-center border-l border-slate-200 cursor-grab select-none relative active:cursor-grabbing no-print"
                style="background: radial-gradient(circle, #d4d4d8 1px, transparent 1px) 0 0 / 20px 20px, #e8eaed"
                @mousedown="pointerDown3D"
                @mousemove="pointerMove3D"
@@ -559,7 +559,7 @@ function onSlideLeave(el: Element, done: () => void): void {
         </template>
 
         <!-- 仅 3D 立牌全宽显示（无名字时） -->
-        <div v-else class="flex-1 self-stretch overflow-hidden flex flex-col items-center justify-center cursor-grab select-none relative active:cursor-grabbing"
+        <div v-else class="flex-1 self-stretch overflow-hidden flex flex-col items-center justify-center cursor-grab select-none relative active:cursor-grabbing no-print"
              style="background: radial-gradient(circle, #d4d4d8 1px, transparent 1px) 0 0 / 20px 20px, #e8eaed"
              @mousedown="pointerDown3D"
              @mousemove="pointerMove3D"
@@ -626,6 +626,14 @@ html, body, #app {
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 输入框允许选中 */
+input, textarea {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* 标题悬停动画 */
@@ -812,5 +820,15 @@ html, body, #app {
   .half { container-type: unset !important; }
   .half-base { container-type: unset !important; }
   .name { font-size: var(--print-fs) !important; -webkit-text-stroke-width: var(--print-sw) !important; }
+
+  /* 3D 立牌不打印 */
+  .standee-scene,
+  .standee-shadow,
+  .standee-hint { display: none !important; }
+
+  /* 3D 分屏时左侧卡片包装器 —— 清除仅用于屏幕预览的样式 */
+  .preview > .flex-1:not(.no-print) {
+    overflow: visible !important; background: none !important;
+  }
 }
 </style>

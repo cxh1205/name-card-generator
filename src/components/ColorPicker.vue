@@ -55,7 +55,7 @@ function normalizeHex(input: string): string | null {
 </script>
 
 <template>
-  <div class="inline-flex items-center gap-1.5 bg-white border border-slate-200 rounded-md px-1.5 h-[30px] box-border">
+  <div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-md px-1.5 h-[30px] box-border w-full">
     <input
       type="color"
       :value="modelValue"
