@@ -308,52 +308,9 @@ function onSlideLeave(el: Element, done: () => void): void {
           placeholder="每行一个名字，用空格控制字间距&#10;例如：张  三"
           rows="10"
           spellcheck="false"
-          class="name-input w-full px-3 py-2.5 border border-slate-200 rounded-md text-[13.5px] font-sans leading-[1.6] resize-y bg-white whitespace-pre-wrap transition-[border-color,box-shadow] duration-150 placeholder:text-slate-300"
+          class="name-input w-full px-3 py-2.5 border border-slate-200 rounded-md text-[13.5px] font-sans leading-[1.6] resize-y bg-white whitespace-pre-wrap transition-[border-color,box-shadow] duration-150 placeholder:text-slate-300 max-h-[540px] overflow-y-auto"
         ></textarea>
         <div class="text-[11.5px] text-slate-400 leading-[1.4]">支持换行、逗号、顿号分隔</div>
-      </div>
-
-      <!-- 纸张边长 -->
-      <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
-        <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px]">
-          <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg>
-          纸张边长
-          <span class="font-medium text-blue-600 ml-auto text-xs">{{ cardSize }} mm</span>
-        </div>
-        <div class="text-[11.5px] text-slate-400 leading-[1.4] mb-1">屏幕预览与打印均使用此尺寸</div>
-        <div class="flex items-center gap-2">
-          <span class="text-[11px] text-slate-400 font-medium shrink-0">60</span>
-          <input type="range" v-model.number="cardSize" min="60" max="200" step="5" class="flex-1 accent-blue-600 h-1" />
-          <span class="text-[11px] text-slate-400 font-medium shrink-0">200</span>
-        </div>
-      </div>
-
-      <!-- 背景设置 -->
-      <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
-        <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px]">
-          <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          背景
-        </div>
-        <BackgroundPicker v-model:color="bgColor" v-model:image="bgImage" hint="图片已自动裁剪为 2:1 填充半张卡" />
-      </div>
-
-      <!-- 第三联（底部面板） -->
-      <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
-        <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px] cursor-pointer transition-colors duration-150 rounded-md px-1.5 py-[3px] -mx-1.5 -my-[3px] hover:bg-slate-200" @click="showBase = !showBase">
-          <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
-          第三联（底部）
-          <ToggleSwitch v-model="showBase" style="margin-left: auto" />
-        </div>
-        <Transition
-          @before-enter="onSlideBeforeEnter"
-          @enter="onSlideEnter"
-          @before-leave="onSlideBeforeLeave"
-          @leave="onSlideLeave"
-        >
-          <div v-if="showBase" class="expand-inner" style="padding-top:8px;display:flex;flex-direction:column;gap:8px">
-            <BackgroundPicker v-model:color="baseBgColor" v-model:image="baseBgImage" hint="图片已自动裁剪为 2:1 填充底部" />
-          </div>
-        </Transition>
       </div>
 
       <!-- 字体设置 -->
@@ -413,6 +370,49 @@ function onSlideLeave(el: Element, done: () => void): void {
         <span class="text-[11.5px] text-slate-500 mt-0.5">
           {{ autoFill ? '自动' : '手动' }}：字号占半卡高度的 <strong class="text-blue-600">{{ fontPctEffective }}%</strong>
         </span>
+      </div>
+
+      <!-- 背景设置 -->
+      <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
+        <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px]">
+          <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          背景
+        </div>
+        <BackgroundPicker v-model:color="bgColor" v-model:image="bgImage" hint="图片已自动裁剪为 2:1 填充半张卡" />
+      </div>
+
+      <!-- 纸张边长 -->
+      <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
+        <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px]">
+          <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg>
+          纸张边长
+          <span class="font-medium text-blue-600 ml-auto text-xs">{{ cardSize }} mm</span>
+        </div>
+        <div class="text-[11.5px] text-slate-400 leading-[1.4] mb-1">屏幕预览与打印均使用此尺寸</div>
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] text-slate-400 font-medium shrink-0">60</span>
+          <input type="range" v-model.number="cardSize" min="60" max="200" step="5" class="flex-1 accent-blue-600 h-1" />
+          <span class="text-[11px] text-slate-400 font-medium shrink-0">200</span>
+        </div>
+      </div>
+
+      <!-- 第三联（底部面板） -->
+      <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
+        <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px] cursor-pointer transition-colors duration-150 rounded-md px-1.5 py-[3px] -mx-1.5 -my-[3px] hover:bg-slate-200" @click="showBase = !showBase">
+          <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+          第三联（底部）
+          <ToggleSwitch v-model="showBase" style="margin-left: auto" />
+        </div>
+        <Transition
+          @before-enter="onSlideBeforeEnter"
+          @enter="onSlideEnter"
+          @before-leave="onSlideBeforeLeave"
+          @leave="onSlideLeave"
+        >
+          <div v-if="showBase" class="expand-inner" style="padding-top:8px;display:flex;flex-direction:column;gap:8px">
+            <BackgroundPicker v-model:color="baseBgColor" v-model:image="baseBgImage" hint="图片已自动裁剪为 2:1 填充底部" />
+          </div>
+        </Transition>
       </div>
 
       <!-- 打印按钮（吸底固定） -->
