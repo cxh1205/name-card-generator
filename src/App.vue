@@ -34,6 +34,17 @@ const showBase = ref(false)
 const baseBgColor = ref('#ffffff')
 const baseBgImage = ref<string | null>(null)
 
+// 打印分界线（仅三角席卡）
+const showPrintFoldLine = ref(false)
+const foldLineType = ref<'solid' | 'dashed' | 'dotted'>('solid')
+const foldLineColor = ref('#999999')
+
+const foldLinePrintStyle = computed<StyleMap>(() => ({
+  borderTopStyle: foldLineType.value,
+  borderTopColor: foldLineColor.value,
+  borderTopWidth: '1px',
+}))
+
 // 切换到姓名卡片时自动关闭第三联
 watch(cardMode, (mode) => {
   if (mode === 'flat') showBase.value = false
@@ -97,9 +108,10 @@ const cardStyle = computed<CardStyleMap>(() => ({
     : showBase.value ? `${(cardSize.value * 1.5).toFixed(1)}mm` : `${cardSize.value}mm`,
   '--print-fs': printFontSize.value,
   '--print-sw': printStrokeWidth.value,
-  // 屏幕预览：预计算比例因子，CSS 中仅需一次乘法，避免浏览器逐级 calc 浮点损失
-  '--font-scale': (cardMode.value === 'flat' ? 50 : showBase.value ? 75 : 50) * fontPctEffective.value / 100,
-  '--stroke-scale': (cardMode.value === 'flat' ? 50 : showBase.value ? 75 : 50) * strokePct.value / 100,
+  // 屏幕预览：预计算比例因子。半卡高度恒 = 卡片宽度 × 50%
+  // （正方形 W/2=0.5W；2:3 时 1.5W/3=0.5W；扁平 2:1 时 0.5W/1=0.5W，全部相等）
+  '--font-scale': 50 * fontPctEffective.value / 100,
+  '--stroke-scale': 50 * strokePct.value / 100,
 }))
 
 const halfStyle = computed<StyleMap>(() => {
@@ -454,6 +466,41 @@ function onSlideLeave(el: Element, done: () => void): void {
         </Transition>
       </div>
 
+      <!-- 打印分界线（仅三角席卡） -->
+      <div v-if="cardMode === 'tent'" class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
+        <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px] cursor-pointer transition-colors duration-150 rounded-md px-1.5 py-[3px] -mx-1.5 -my-[3px] hover:bg-slate-200" @click="showPrintFoldLine = !showPrintFoldLine">
+          <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="16 6 20 12 16 18"/></svg>
+          打印分界线
+          <ToggleSwitch v-model="showPrintFoldLine" style="margin-left: auto" />
+        </div>
+        <Transition
+          @before-enter="onSlideBeforeEnter"
+          @enter="onSlideEnter"
+          @before-leave="onSlideBeforeLeave"
+          @leave="onSlideLeave"
+        >
+          <div v-if="showPrintFoldLine" class="expand-inner" style="padding-top:8px;display:flex;flex-direction:column;gap:8px">
+            <div class="flex gap-2 items-start">
+              <div class="flex-1 flex flex-col gap-1 min-w-0">
+                <span class="text-[11px] text-slate-400 font-medium">线型</span>
+                <div class="btn-group flex gap-px bg-slate-200 rounded-md p-0.5">
+                  <button
+                    v-for="item in ([['solid','实线'],['dashed','虚线'],['dotted','点线']] as const)"
+                    :key="item[0]"
+                    :class="{ 'bg-white text-slate-900 font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.08)]': foldLineType === item[0] }"
+                    class="grow py-1 px-2.5 border-none bg-transparent rounded-[5px] text-[12px] font-medium cursor-pointer text-slate-500 transition-all duration-150 hover:text-slate-700 hover:bg-white/50 whitespace-nowrap"
+                    @click="foldLineType = item[0]"
+                  >{{ item[1] }}</button>
+                </div>
+              </div>
+              <div class="flex-1 flex flex-col gap-1 min-w-0">
+                <span class="text-[11px] text-slate-400 font-medium">颜色</span>
+                <ColorPicker v-model="foldLineColor" />
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </div>
 
       <!-- 打印按钮（吸底固定） -->
       <div class="print-sticky sticky bottom-0 bg-white mt-auto -mx-4 px-4 pt-3 pb-4 border-t border-slate-200">
@@ -517,12 +564,14 @@ function onSlideLeave(el: Element, done: () => void): void {
               <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative half-top rotate-180" :style="halfStyle">
                 <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
               </div>
-              <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+              <div v-if="!showPrintFoldLine" class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+              <div v-if="showPrintFoldLine" class="print-fold-line h-0 shrink-0 border-t" :style="foldLinePrintStyle"></div>
               <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="halfStyle">
                 <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
               </div>
               <template v-if="showBase">
-                <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+                <div v-if="!showPrintFoldLine" class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+                <div v-if="showPrintFoldLine" class="print-fold-line h-0 shrink-0 border-t" :style="foldLinePrintStyle"></div>
                 <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="baseStyle"></div>
               </template>
             </template>
@@ -549,12 +598,14 @@ function onSlideLeave(el: Element, done: () => void): void {
                   <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative half-top rotate-180" :style="halfStyle">
                     <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
                   </div>
-                  <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+                  <div v-if="!showPrintFoldLine" class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+                  <div v-if="showPrintFoldLine" class="print-fold-line h-0 shrink-0 border-t" :style="foldLinePrintStyle"></div>
                   <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="halfStyle">
                     <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
                   </div>
                   <template v-if="showBase">
-                    <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+                    <div v-if="!showPrintFoldLine" class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+                    <div v-if="showPrintFoldLine" class="print-fold-line h-0 shrink-0 border-t" :style="foldLinePrintStyle"></div>
                     <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="baseStyle"></div>
                   </template>
                 </template>
@@ -746,6 +797,8 @@ input, textarea {
   box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
 }
 
+/* 打印分界线：v-if 控制显隐，屏幕和打印均可见（贯穿卡片） */
+
 /* 屏幕预览：纯百分比字号，比例因子由 JS 预计算，CSS 仅一次乘法，杜绝浮点误差 */
 .half {
   container-type: inline-size;
@@ -886,6 +939,7 @@ input, textarea {
 
   .no-print { display: none !important; }
   .divider { display: none !important; }
+  .print-fold-line { display: block !important; }
 
   #__vue-devtools-container__ { display: none !important; }
 
