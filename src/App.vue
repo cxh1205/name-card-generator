@@ -18,6 +18,7 @@ type CardStyleMap = Record<string, string | number>
 // 响应式状态
 const namesText = ref('张三\n李 四\n王老五')
 const cardSize = ref(120)
+const cardMode = ref<'tent' | 'flat'>('tent')
 const columns = ref(1)
 const bgColor = ref('#ffffff')
 const fontColor = ref('#1a1a1a')
@@ -32,6 +33,11 @@ const bgImage = ref<string | null>(null)
 const showBase = ref(false)
 const baseBgColor = ref('#ffffff')
 const baseBgImage = ref<string | null>(null)
+
+// 切换到姓名卡片时自动关闭第三联
+watch(cardMode, (mode) => {
+  if (mode === 'flat') showBase.value = false
+})
 
 // 3D 立牌
 const show3D = ref(false)
@@ -86,7 +92,9 @@ const cardStyle = computed<CardStyleMap>(() => ({
   '--stroke-pct': strokePct.value,
   '--stroke-color': strokeColor.value,
   '--print-w': `${cardSize.value}mm`,
-  '--print-h': showBase.value ? `${(cardSize.value * 1.5).toFixed(1)}mm` : `${cardSize.value}mm`,
+  '--print-h': cardMode.value === 'flat'
+    ? `${(cardSize.value / 2).toFixed(1)}mm`
+    : showBase.value ? `${(cardSize.value * 1.5).toFixed(1)}mm` : `${cardSize.value}mm`,
   '--print-fs': printFontSize.value,
   '--print-sw': printStrokeWidth.value,
 }))
@@ -135,10 +143,12 @@ onMounted(() => {
 
   const update = () => {
     const w = cardSize.value
-    const h = showBase.value ? cardSize.value * 1.5 : cardSize.value
+    const h = cardMode.value === 'flat'
+      ? cardSize.value / 2
+      : showBase.value ? cardSize.value * 1.5 : cardSize.value
     styleEl.textContent = `@page { size: ${w}mm ${h}mm; margin: 0; }`
   }
-  watch([cardSize, showBase], update, { immediate: true })
+  watch([cardSize, showBase, cardMode], update, { immediate: true })
 })
 
 // 3D 立牌计算属性
@@ -158,6 +168,12 @@ const standeeVars = computed<StyleMap>(() => ({
   '--leaf-h': leafH.value + 'px',
   '--tri-h': triH.value.toFixed(1) + 'px',
   '--half-z': halfZ.value.toFixed(1) + 'px',
+}))
+
+// 姓名卡片 3D：单叶片直立，仅需宽高
+const flatStandeeVars = computed<StyleMap>(() => ({
+  '--leaf-w': leafW.value + 'px',
+  '--leaf-h': leafH.value + 'px',
 }))
 
 const fontSize3D = computed(() => {
@@ -295,6 +311,26 @@ function onSlideLeave(el: Element, done: () => void): void {
           <span class="logo-text-hover">查看开源代码</span>
         </span>
       </a>
+      
+      <!-- 卡牌模式 -->
+      <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
+        <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px]">
+          <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+          卡牌模式
+        </div>
+        <div class="btn-group flex gap-px bg-slate-200 rounded-md p-0.5">
+          <button
+            :class="{ 'bg-white text-slate-900 font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.08)]': cardMode === 'tent' }"
+            class="grow py-1.5 px-4 border-none bg-transparent rounded-[5px] text-[13px] font-medium cursor-pointer text-slate-500 transition-all duration-150 hover:text-slate-700 hover:bg-white/50 whitespace-nowrap"
+            @click="cardMode = 'tent'"
+          >三角席卡</button>
+          <button
+            :class="{ 'bg-white text-slate-900 font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.08)]': cardMode === 'flat' }"
+            class="grow py-1.5 px-4 border-none bg-transparent rounded-[5px] text-[13px] font-medium cursor-pointer text-slate-500 transition-all duration-150 hover:text-slate-700 hover:bg-white/50 whitespace-nowrap"
+            @click="cardMode = 'flat'"
+          >姓名卡片</button>
+        </div>
+      </div>
 
       <!-- 名字输入 -->
       <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
@@ -396,8 +432,8 @@ function onSlideLeave(el: Element, done: () => void): void {
         </div>
       </div>
 
-      <!-- 第三联（底部面板） -->
-      <div class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
+      <!-- 第三联（底部面板） —— 仅三角席卡可用 -->
+      <div v-if="cardMode === 'tent'" class="panel bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col relative gap-2">
         <div class="panel-label flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 tracking-[0.3px] cursor-pointer transition-colors duration-150 rounded-md px-1.5 py-[3px] -mx-1.5 -my-[3px] hover:bg-slate-200" @click="showBase = !showBase">
           <svg class="text-slate-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
           第三联（底部）
@@ -414,6 +450,7 @@ function onSlideLeave(el: Element, done: () => void): void {
           </div>
         </Transition>
       </div>
+
 
       <!-- 打印按钮（吸底固定） -->
       <div class="print-sticky sticky bottom-0 bg-white mt-auto -mx-4 px-4 pt-3 pb-4 border-t border-slate-200">
@@ -461,7 +498,7 @@ function onSlideLeave(el: Element, done: () => void): void {
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
           </div>
           <p class="text-base font-semibold text-slate-500">在左侧输入名字开始生成名牌</p>
-          <p class="text-[13px] text-slate-400">名字将自动排版为可折叠的三角形名牌</p>
+          <p class="text-[13px] text-slate-400">{{ cardMode === 'tent' ? '名字将自动排版为可折叠的三角形名牌' : '名字将自动排版为单面姓名卡片' }}</p>
         </div>
 
         <!-- 仅卡片预览（3D 关闭时） -->
@@ -470,19 +507,26 @@ function onSlideLeave(el: Element, done: () => void): void {
             v-for="(name, index) in names"
             :key="index"
             class="card flex flex-col w-full rounded-sm transition-shadow duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.12)]"
-            :class="showBase ? 'aspect-[2/3]' : 'aspect-square'"
+            :class="cardMode === 'flat' ? 'aspect-[2/1]' : (showBase ? 'aspect-[2/3]' : 'aspect-square')"
             :style="cardStyle"
           >
-            <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative half-top rotate-180" :style="halfStyle">
-              <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
-            </div>
-            <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
-            <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="halfStyle">
-              <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
-            </div>
-            <template v-if="showBase">
+            <template v-if="cardMode === 'tent'">
+              <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative half-top rotate-180" :style="halfStyle">
+                <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
+              </div>
               <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
-              <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="baseStyle"></div>
+              <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="halfStyle">
+                <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
+              </div>
+              <template v-if="showBase">
+                <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+                <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="baseStyle"></div>
+              </template>
+            </template>
+            <template v-else>
+              <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="halfStyle">
+                <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
+              </div>
             </template>
           </div>
         </div>
@@ -495,19 +539,26 @@ function onSlideLeave(el: Element, done: () => void): void {
                 v-for="(name, index) in names"
                 :key="index"
                 class="card flex flex-col w-full rounded-sm transition-shadow duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_1px_2px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.12)]"
-                :class="showBase ? 'aspect-[2/3]' : 'aspect-square'"
+                :class="cardMode === 'flat' ? 'aspect-[2/1]' : (showBase ? 'aspect-[2/3]' : 'aspect-square')"
                 :style="cardStyle"
               >
-                <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative half-top rotate-180" :style="halfStyle">
-                  <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
-                </div>
-                <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
-                <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="halfStyle">
-                  <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
-                </div>
-                <template v-if="showBase">
+                <template v-if="cardMode === 'tent'">
+                  <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative half-top rotate-180" :style="halfStyle">
+                    <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
+                  </div>
                   <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
-                  <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="baseStyle"></div>
+                  <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="halfStyle">
+                    <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
+                  </div>
+                  <template v-if="showBase">
+                    <div class="divider h-0 shrink-0 mx-[8%] border-t border-dashed border-[#d0d0d0]"></div>
+                    <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="baseStyle"></div>
+                  </template>
+                </template>
+                <template v-else>
+                  <div class="half flex-1 flex items-center justify-center overflow-hidden p-[3mm] relative" :style="halfStyle">
+                    <span class="name whitespace-pre leading-none text-center" v-html="displayName(name)"></span>
+                  </div>
                 </template>
               </div>
             </div>
@@ -529,28 +580,39 @@ function onSlideLeave(el: Element, done: () => void): void {
             <div class="standee-scene flex flex-col items-center justify-center">
               <div class="standee-cam" :style="camStyle">
                 <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
-                  <div class="standee" :style="standeeVars">
-                  <!-- 前叶片：正面显示名字内容，背面为纯白色 -->
-                  <div class="leaf leaf-front">
-                    <div class="leaf-face leaf-face-front" :style="leaf3DContent">
-                      <span class="standee-name" v-html="displayName(displayName3D)"></span>
+                  <!-- 三角席卡 3D：双叶片三角形 -->
+                  <template v-if="cardMode === 'tent'">
+                    <div class="standee" :style="standeeVars">
+                      <div class="leaf leaf-front">
+                        <div class="leaf-face leaf-face-front" :style="leaf3DContent">
+                          <span class="standee-name" v-html="displayName(displayName3D)"></span>
+                        </div>
+                        <div class="leaf-face leaf-face-back leaf-face-white"></div>
+                      </div>
+                      <div class="leaf leaf-back">
+                        <div class="leaf-face leaf-face-front leaf-face-white"></div>
+                        <div class="leaf-face leaf-face-back" :style="leaf3DContent">
+                          <span class="standee-name" v-html="displayName(displayName3D)"></span>
+                        </div>
+                      </div>
+                      <div v-if="showBase" class="leaf leaf-base">
+                        <div class="leaf-face leaf-face-front" :style="base3DContent"></div>
+                        <div class="leaf-face leaf-face-back leaf-face-white"></div>
+                      </div>
                     </div>
-                    <div class="leaf-face leaf-face-back leaf-face-white"></div>
-                  </div>
-                  <!-- 后叶片：正面为纯白色，背面显示名字内容 -->
-                  <div class="leaf leaf-back">
-                    <div class="leaf-face leaf-face-front leaf-face-white"></div>
-                    <div class="leaf-face leaf-face-back" :style="leaf3DContent">
-                      <span class="standee-name" v-html="displayName(displayName3D)"></span>
+                  </template>
+                  <!-- 姓名卡片 3D：单叶片直立 -->
+                  <template v-else>
+                    <div class="standee standee--flat" :style="flatStandeeVars">
+                      <div class="leaf leaf-flat">
+                        <div class="leaf-face leaf-face-front" :style="leaf3DContent">
+                          <span class="standee-name" v-html="displayName(displayName3D)"></span>
+                        </div>
+                        <div class="leaf-face leaf-face-back leaf-face-white"></div>
+                      </div>
                     </div>
-                  </div>
-                  <!-- 底板：连接前后叶片底边的水平面 -->
-                  <div v-if="showBase" class="leaf leaf-base">
-                    <div class="leaf-face leaf-face-front" :style="base3DContent"></div>
-                    <div class="leaf-face leaf-face-back leaf-face-white"></div>
-                  </div>
+                  </template>
                 </div>
-              </div>
               </div>
               <div class="standee-shadow"></div>
             </div>
@@ -576,24 +638,38 @@ function onSlideLeave(el: Element, done: () => void): void {
           <div class="standee-scene flex flex-col items-center justify-center">
             <div class="standee-cam" :style="camStyle">
               <div class="standee-stage" :style="stage3DStyle" :class="{ dragging: isDragging3D }">
-                <div class="standee" :style="standeeVars">
-                  <div class="leaf leaf-front">
-                    <div class="leaf-face leaf-face-front" :style="leaf3DContent">
-                      <span class="standee-name" v-html="displayName(displayName3D)"></span>
+                <!-- 三角席卡 3D：双叶片三角形 -->
+                <template v-if="cardMode === 'tent'">
+                  <div class="standee" :style="standeeVars">
+                    <div class="leaf leaf-front">
+                      <div class="leaf-face leaf-face-front" :style="leaf3DContent">
+                        <span class="standee-name" v-html="displayName(displayName3D)"></span>
+                      </div>
+                      <div class="leaf-face leaf-face-back leaf-face-white"></div>
                     </div>
-                    <div class="leaf-face leaf-face-back leaf-face-white"></div>
-                  </div>
-                  <div class="leaf leaf-back">
-                    <div class="leaf-face leaf-face-front leaf-face-white"></div>
-                    <div class="leaf-face leaf-face-back" :style="leaf3DContent">
-                      <span class="standee-name" v-html="displayName(displayName3D)"></span>
+                    <div class="leaf leaf-back">
+                      <div class="leaf-face leaf-face-front leaf-face-white"></div>
+                      <div class="leaf-face leaf-face-back" :style="leaf3DContent">
+                        <span class="standee-name" v-html="displayName(displayName3D)"></span>
+                      </div>
+                    </div>
+                    <div v-if="showBase" class="leaf leaf-base">
+                      <div class="leaf-face leaf-face-front" :style="base3DContent"></div>
+                      <div class="leaf-face leaf-face-back leaf-face-white"></div>
                     </div>
                   </div>
-                  <div v-if="showBase" class="leaf leaf-base">
-                    <div class="leaf-face leaf-face-front" :style="base3DContent"></div>
-                    <div class="leaf-face leaf-face-back leaf-face-white"></div>
+                </template>
+                <!-- 姓名卡片 3D：单叶片直立 -->
+                <template v-else>
+                  <div class="standee standee--flat" :style="flatStandeeVars">
+                    <div class="leaf leaf-flat">
+                      <div class="leaf-face leaf-face-front" :style="leaf3DContent">
+                        <span class="standee-name" v-html="displayName(displayName3D)"></span>
+                      </div>
+                      <div class="leaf-face leaf-face-back leaf-face-white"></div>
+                    </div>
                   </div>
-                </div>
+                </template>
               </div>
             </div>
             <div class="standee-shadow"></div>
@@ -758,6 +834,21 @@ input, textarea {
   content: '';
   position: absolute; inset: 0;
   background: linear-gradient(0deg, rgba(0,0,0,0.04) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+/* 姓名卡片 3D：单叶片直立结构 */
+.standee--flat {
+  height: var(--leaf-h);
+}
+.leaf-flat {
+  transform-origin: 50% 100%;
+  transform: rotateX(-8deg);
+}
+.leaf-flat .leaf-face-front::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 55%);
   pointer-events: none;
 }
 
