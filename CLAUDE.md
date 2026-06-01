@@ -84,13 +84,13 @@ src/
 
 ### 屏幕预览 vs 打印的双端渲染
 
-同一个 DOM 产生两种视觉效果：
+同一个 DOM 产生两种视觉效果。**核心设计思想：预览用纯百分比、打印算真实 mm**。屏幕端字号只跟卡片宽度成固定比例，与列数（卡片像素大小）无关；打印时再用 `cardSize` 换算绝对 mm 值。
 
 **屏幕预览：**
 - 卡片用 CSS Grid `repeat(N, minmax(0, 1fr))` 响应式排列，最大宽度 960px
-- 每张 `.card` 为正方形（`aspect-ratio: 1`，有第三联时为 `2:3`），宽度填满网格单元格
-- 字号用 CSS Container Queries：`.half` 设 `container-type: size`，`.name` 用 `font-size: calc(1cqh * var(--font-pct))`
-- `--font-pct` 以行内样式写在 `.card` 上（来自 `cardStyle` 计算属性），由 `.name` 继承
+- 每张 `.card` 为正方形（`aspect-ratio: 1`，有第三联时为 `2:3`，姓名卡片为 `2:1`），宽度填满网格单元格
+- 字号用 CSS Container Queries：`.half` 设 `container-type: inline-size`，`.name` 用 `font-size: calc(1cqw * var(--font-scale))`
+- `--font-scale` 由 `cardStyle` 预计算（`fontCqw * fontPctEffective / 100`），将比例因子在 JS 中一次算出，CSS 侧仅做一次乘法，杜绝浏览器逐级 calc 浮点积累误差
 - `cardSize`（mm）不影响屏幕卡片大小，仅存为 CSS 变量供打印使用
 - `.divider` 显示为 `border-top: 1px dashed #d0d0d0` 虚线
 
@@ -112,7 +112,7 @@ src/
 - **自动撑满模式**：`min(90, 170 / maxChars)` —— 由 `(cardWidth * 0.85 / n) / (cardWidth / 2) * 100` 推导而来
 - **手动模式**：用户滑块值（10% ~ 95%）
 
-屏幕端 `1cqh` = `.half` 高度的 1%，所以 `calc(1cqh * 70)` = 半卡高度的 70%。这个比例不随卡片大小改变。
+屏幕端 `1cqw` = `.half` 宽度的 1%，`--font-scale` = 半卡高度占比 × 字号百分比 ÷ 100（由 JS 预计算为单个浮点数）。因此 `calc(1cqw * 35)` 等价于卡片宽度的 35%，即半卡高度的 70%。一个乘法、无中间舍入，比例与列数、卡片像素大小均无关。
 
 ### 背景图片处理流程
 

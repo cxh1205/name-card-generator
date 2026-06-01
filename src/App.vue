@@ -97,6 +97,9 @@ const cardStyle = computed<CardStyleMap>(() => ({
     : showBase.value ? `${(cardSize.value * 1.5).toFixed(1)}mm` : `${cardSize.value}mm`,
   '--print-fs': printFontSize.value,
   '--print-sw': printStrokeWidth.value,
+  // 屏幕预览：预计算比例因子，CSS 中仅需一次乘法，避免浏览器逐级 calc 浮点损失
+  '--font-scale': (cardMode.value === 'flat' ? 50 : showBase.value ? 75 : 50) * fontPctEffective.value / 100,
+  '--stroke-scale': (cardMode.value === 'flat' ? 50 : showBase.value ? 75 : 50) * strokePct.value / 100,
 }))
 
 const halfStyle = computed<StyleMap>(() => {
@@ -482,7 +485,7 @@ function onSlideLeave(el: Element, done: () => void): void {
         <div class="flex-1"></div>
         <span class="inline-flex items-center gap-2 cursor-pointer select-none text-[13px] font-medium text-slate-700 whitespace-nowrap" @click="show3D = !show3D">
           <ToggleSwitch v-model="show3D" />
-          <span>3D 立牌</span>
+          <span>3D 预览</span>
         </span>
       </div>
 
@@ -743,17 +746,17 @@ input, textarea {
   box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
 }
 
-/* 容器查询 */
+/* 屏幕预览：纯百分比字号，比例因子由 JS 预计算，CSS 仅一次乘法，杜绝浮点误差 */
 .half {
-  container-type: size;
+  container-type: inline-size;
 }
 .half-base {
   container-type: unset;
 }
 .name {
-  font-size: calc(1cqh * var(--font-pct, 70));
+  font-size: calc(1cqw * var(--font-scale, 35));
   -webkit-text-stroke-color: var(--stroke-color, transparent);
-  -webkit-text-stroke-width: calc(1cqh * var(--stroke-pct, 0));
+  -webkit-text-stroke-width: calc(1cqw * var(--stroke-scale, 0));
   paint-order: stroke fill;
 }
 
